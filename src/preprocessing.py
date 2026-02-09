@@ -1,73 +1,131 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
-import matplotlib.pyplot as plt
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
+
+# ----------------------------
+# Schema (single fixed columns)
+# ----------------------------
 @dataclass(frozen=True)
 class Schema:
-    """Expected columns for the learning dataset."""
     required_columns: List[str]
-    target_column: str
 
-DEFAULT_SCHEMA = Schema(
+
+SINGLE_SCHEMA = Schema(
     required_columns=[
         "student_id",
-        "study_time",
-        "assignment_rate",
-        "lms_login",
-        "absence",
-        "late",
-        "total_score",
-    ],
-    target_column="total_score",
+        "midterm_score",
+        "final_score",          # 학기 중간이면 NaN 허용
+        "performance_score",
+        "assignment_count",
+        "participation_level",  # 상/중/하
+        "question_count",
+        "night_study",          # 0/1
+        "absence_count",
+        "behavior_score",
+    ]
 )
 
+
+# ----------------------------
+# IO
+# ----------------------------
 def load_csv(path: str, encoding: str = "utf-8-sig") -> pd.DataFrame:
-    """Load a CSV file into a DataFrame."""
     return pd.read_csv(path, encoding=encoding)
 
+
 def save_csv(df: pd.DataFrame, path: str, encoding: str = "utf-8-sig") -> None:
-  """Save DataFrame to a CSV file."""
-  df.to_csv(path, index=False, encoding=encoding)
+    df.to_csv(path, index=False, encoding=encoding)
 
 
-def validate_schema(df: pd.DataFrame, schema: Schema = DEFAULT_SCHEMA) -> None:
-    """Raise an error if required columns are missing."""
+# ----------------------------
+# Validation & Cleaning
+# ----------------------------
+def validate_schema(df: pd.DataFrame, schema: Schema = SINGLE_SCHEMA) -> None:
     missing = [c for c in schema.required_columns if c not in df.columns]
     if missing:
         raise ValueError(f"Missing required columns: {missing}")
 
+
 def basic_cleaning(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Basic cleanup:
-    - Drop duplicated rows
     - Strip column names
-    - Enforce numeric types where possible
+    - Drop duplicates
+    - Coerce numeric columns to numeric (errors->NaN)
+    - Keep participation_level as string/category
     """
     out = df.copy()
     out.columns = [c.strip() for c in out.columns]
     out = out.drop_duplicates()
-    # Coerce numeric columns (ignore errors -> NaN)
-    for col in out.columns:
-        if col == "student_id":
-            continue
-        out[col] = pd.to_numeric(out[col], errors="coerce")
+
+    # numeric cols (participation_level 제외)
+    numeric_cols = [
+        "midterm_score",
+        "final_score",
+        "performance_score",
+        "assignment_count",
+        "question_count",
+        "night_study",
+        "absence_count",
+        "behavior_score",
+    ]
+    for c in numeric_cols:
+        if c in out.columns:
+            out[c] = pd.to_numeric(out[c], errors="coerce")
+
+    # participation_level normalize (strip)
+    if "participation_level" in out.columns:
+        out["participation_level"] = (
+            out["participation_level"].astype(str).str.strip()
+        )
+
     return out
+
+
+def encode_participation_level(
+    df: pd.DataFrame,
+    col: str = "participation_level",
+    out_col: str = "participation_level_num",
+    mapping: Optional[Dict[str, int]] = None,
+) -> pd.DataFrame:
+    """
+    상/중/하 -> 2/1/0 숫자 인코딩 컬럼 추가.
+    원본(col)은 유지.
+    """
+    if mapping is None:
+        mapping = {"상": 2, "중": 1, "하": 0}
+
+    out = df.copy()
+    if col not in out.columns:
+        return out
+
+    out[out_col] = out[col].map(mapping)
+    # 모르는 값은 NaN -> 이후 결측 처리에서 메움
+    return out
+
 
 def fill_missing(
     df: pd.DataFrame,
     numeric_strategy: str = "median",
+    numeric_cols: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     """
-    Fill missing values for numeric columns using median or mean.
+    numeric_strategy: median | mean
+    지정된 numeric_cols만 채움. (final_score NaN은 유지할 수도 있지만,
+    모델 입력에서는 채우는 게 편하므로 기본값은 numeric 전체 채움)
     """
     out = df.copy()
-    numeric_cols = out.select_dtypes(include=[np.number]).columns.tolist()
+
+    if numeric_cols is None:
+        numeric_cols = out.select_dtypes(include=[np.number]).columns.tolist()
+
     for col in numeric_cols:
+        if col not in out.columns:
+            continue
         if numeric_strategy == "median":
             value = out[col].median()
         elif numeric_strategy == "mean":
@@ -75,57 +133,159 @@ def fill_missing(
         else:
             raise ValueError("numeric_strategy must be 'median' or 'mean'")
         out[col] = out[col].fillna(value)
+
     return out
+
 
 def clip_outliers_iqr(
     df: pd.DataFrame,
     cols: Optional[List[str]] = None,
     k: float = 1.5,
 ) -> pd.DataFrame:
-    """
-    Clip outliers using IQR rule to reduce extreme values.
-    """
     out = df.copy()
     if cols is None:
         cols = out.select_dtypes(include=[np.number]).columns.tolist()
+
     for col in cols:
+        if col not in out.columns:
+            continue
         q1 = out[col].quantile(0.25)
         q3 = out[col].quantile(0.75)
         iqr = q3 - q1
         low = q1 - k * iqr
         high = q3 + k * iqr
         out[col] = out[col].clip(lower=low, upper=high)
+
     return out
 
-def prepare_features(
-    df: pd.DataFrame,
-    schema: Schema = DEFAULT_SCHEMA,
-    drop_cols: Optional[List[str]] = None,
-) -> Tuple[pd.DataFrame, pd.Series]:
-    """
-    Split dataframe into X (features) and y (target).
-    """
-    out = df.copy()
-    validate_schema(out, schema=schema)
-    if drop_cols is None:
-        drop_cols = ["student_id"]
-    y = out[schema.target_column]
-    X = out.drop(columns=[schema.target_column] + drop_cols, errors="ignore")
-    return X, y
 
-def preprocess_pipeline(
+# ----------------------------
+# Target engineering (key)
+# ----------------------------
+def compute_achievement_rate(
     df: pd.DataFrame,
-    schema: Schema = DEFAULT_SCHEMA,
-    numeric_strategy: str = "median",
-    clip_outliers: bool = False,
+    score_cols: Optional[List[str]] = None,
+    weights: Optional[Dict[str, float]] = None,
+    out_col: str = "achievement_rate",
 ) -> pd.DataFrame:
     """
-    End-to-end preprocessing pipeline used by notebooks and later models.
+    단일 스키마에서 '비어있는 점수 열'은 자동 제외하고 성취율을 계산.
+
+    - weights를 주면 가중합 (단, NaN인 열은 제외 후 가중치 재정규화)
+    - weights가 없으면 사용 가능한 점수의 단순 평균
+    """
+    out = df.copy()
+    if score_cols is None:
+        score_cols = ["midterm_score", "final_score", "performance_score"]
+
+    # ensure numeric
+    for c in score_cols:
+        if c in out.columns:
+            out[c] = pd.to_numeric(out[c], errors="coerce")
+
+    if weights is None:
+        out[out_col] = out[score_cols].mean(axis=1, skipna=True).round(1)
+        return out
+
+    # weighted with renormalization per row
+    w = {c: float(weights.get(c, 0.0)) for c in score_cols}
+
+    def row_weighted(r: pd.Series) -> float:
+        available = [c for c in score_cols if pd.notna(r.get(c, np.nan)) and w.get(c, 0.0) > 0]
+        if not available:
+            return np.nan
+        s = sum(w[c] for c in available)
+        return float(sum((w[c] / s) * r[c] for c in available))
+
+    out[out_col] = out.apply(row_weighted, axis=1).round(1)
+    return out
+
+
+def add_at_risk_label(
+    df: pd.DataFrame,
+    achievement_col: str = "achievement_rate",
+    out_col: str = "at_risk",
+    achievement_threshold: float = 40.0,
+    total_sessions: int = 30,
+    absence_fraction: float = 1 / 3,
+) -> pd.DataFrame:
+    """
+    at_risk = (achievement_rate < 40) OR (absence_count >= ceil(total_sessions * 1/3))
+    """
+    out = df.copy()
+
+    if achievement_col not in out.columns:
+        out = compute_achievement_rate(out, out_col=achievement_col)
+
+    absence_threshold = int(np.ceil(total_sessions * absence_fraction))
+    out[out_col] = (
+        (pd.to_numeric(out[achievement_col], errors="coerce") < achievement_threshold)
+        | (pd.to_numeric(out["absence_count"], errors="coerce") >= absence_threshold)
+    ).astype(int)
+
+    return out
+
+
+# ----------------------------
+# Feature split
+# ----------------------------
+def prepare_features(
+    df: pd.DataFrame,
+    target_col: str = "at_risk",
+    drop_cols: Optional[List[str]] = None,
+) -> Tuple[pd.DataFrame, pd.Series]:
+    out = df.copy()
+    if drop_cols is None:
+        drop_cols = ["student_id"]
+
+    if target_col not in out.columns:
+        raise ValueError(f"target_col '{target_col}' not found. Create it first (e.g., add_at_risk_label).")
+
+    y = out[target_col]
+    X = out.drop(columns=[target_col] + drop_cols, errors="ignore")
+    return X, y
+
+
+# ----------------------------
+# Pipeline
+# ----------------------------
+def preprocess_pipeline(
+    df: pd.DataFrame,
+    schema: Schema = SINGLE_SCHEMA,
+    numeric_strategy: str = "median",
+    clip_outliers: bool = False,
+    encode_participation: bool = True,
+    add_labels: bool = False,
+    weights: Optional[Dict[str, float]] = None,
+    total_sessions: int = 30,
+    absence_fraction: float = 1 / 3,
+) -> pd.DataFrame:
+    """
+    단일 스키마 대응 파이프라인.
+
+    - 결측 점수(final_score 등)는 계산 시 자동 제외 가능(achievement_rate)
+    - participation_level은 participation_level_num으로 인코딩(기본 on)
+    - 필요 시 at_risk 라벨 생성(add_labels=True)
     """
     validate_schema(df, schema=schema)
     out = basic_cleaning(df)
+
+    if encode_participation:
+        out = encode_participation_level(out)
+
+    # numeric 결측 채우기 (모델 입력/EDA 편의)
     out = fill_missing(out, numeric_strategy=numeric_strategy)
+
     if clip_outliers:
         out = clip_outliers_iqr(out)
+
+    # 성취율/라벨은 선택
+    out = compute_achievement_rate(out, weights=weights)
+    if add_labels:
+        out = add_at_risk_label(
+            out,
+            total_sessions=total_sessions,
+            absence_fraction=absence_fraction,
+        )
+
     return out
-  
