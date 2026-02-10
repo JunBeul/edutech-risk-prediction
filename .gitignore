@@ -1,0 +1,5 @@
+# models
+models/*.joblib
+
+# generated reports
+reports/tables/prediction_report_*.csv
