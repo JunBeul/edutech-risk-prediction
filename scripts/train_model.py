@@ -33,7 +33,7 @@ def main():
     if "at_risk" not in dfp.columns:
         raise ValueError("Missing target column 'at_risk' after preprocessing.")
 
-    X = dfp[FEATURE_COLS]
+    X = dfp.reindex(columns=FEATURE_COLS)
     y = dfp["at_risk"]
 
     model = Pipeline(steps=[
