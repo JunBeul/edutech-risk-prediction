@@ -15,12 +15,14 @@ class Schema:
     required_columns: List[str]
 
 
+SCORE_COLS = ["midterm_score", "final_score", "performance_score"]
+
 SINGLE_SCHEMA = Schema(
     required_columns=[
         "student_id",
-        "midterm_score",
+        "midterm_score",        # 학기 중간이면 NaN 허용
         "final_score",          # 학기 중간이면 NaN 허용
-        "performance_score",
+        "performance_score",    # 학기 중간이면 NaN 허용
         "assignment_count",
         "participation_level",  # 상/중/하
         "question_count",
@@ -29,7 +31,6 @@ SINGLE_SCHEMA = Schema(
         "behavior_score",
     ]
 )
-
 
 # ----------------------------
 # IO
@@ -45,8 +46,13 @@ def save_csv(df: pd.DataFrame, path: str, encoding: str = "utf-8-sig") -> None:
 # ----------------------------
 # Validation & Cleaning
 # ----------------------------
-def validate_schema(df: pd.DataFrame, schema: Schema = SINGLE_SCHEMA) -> None:
-    missing = [c for c in schema.required_columns if c not in df.columns]
+def validate_schema(
+    df: pd.DataFrame,
+    schema: Schema = SINGLE_SCHEMA,
+    optional_columns: Optional[List[str]] = None,
+) -> None:
+    optional = set(optional_columns or [])
+    missing = [c for c in schema.required_columns if c not in df.columns and c not in optional]
     if missing:
         raise ValueError(f"Missing required columns: {missing}")
 
@@ -82,6 +88,28 @@ def basic_cleaning(df: pd.DataFrame) -> pd.DataFrame:
         out["participation_level"] = (
             out["participation_level"].astype(str).str.strip()
         )
+
+    return out
+
+
+def add_missing_flags(
+    df: pd.DataFrame,
+    cols: Optional[List[str]] = None,
+) -> pd.DataFrame:
+    """
+    Add missing flags for score columns before fill_missing.
+    If a score column is absent, create it as NaN and set its flag to 1.
+    """
+    out = df.copy()
+    if cols is None:
+        cols = SCORE_COLS
+
+    for c in cols:
+        if c not in out.columns:
+            out[c] = np.nan
+            out[f"{c}_missing"] = 1
+        else:
+            out[f"{c}_missing"] = out[c].isna().astype(int)
 
     return out
 
@@ -184,7 +212,12 @@ def compute_achievement_rate(
     """
     out = df.copy()
     if score_cols is None:
-        score_cols = ["midterm_score", "final_score", "performance_score"]
+        score_cols = SCORE_COLS
+
+    score_cols = [c for c in score_cols if c in out.columns]
+    if not score_cols:
+        out[out_col] = np.nan
+        return out
 
     # ensure numeric
     for c in score_cols:
@@ -275,8 +308,10 @@ def preprocess_pipeline(
     - participation_level은 participation_level_num으로 인코딩(기본 on)
     - 필요 시 at_risk 라벨 생성(add_labels=True)
     """
-    validate_schema(df, schema=schema)
+    validate_schema(df, schema=schema, optional_columns=SCORE_COLS)
     out = basic_cleaning(df)
+
+    out = add_missing_flags(out, cols=SCORE_COLS)
 
     if encode_participation:
         out = encode_participation_level(out)

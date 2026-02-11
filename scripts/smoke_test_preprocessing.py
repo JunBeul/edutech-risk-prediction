@@ -13,6 +13,8 @@ python scripts/smoke_test_preprocessing.py
 import sys
 from pathlib import Path
 
+import pandas as pd
+
 # --- Path setup ---
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -46,6 +48,31 @@ def main():
     print("at_risk rate:", round(risk_rate, 3))
 
     assert 0 <= risk_rate <= 1, "Invalid risk rate."
+
+    print("\n[5] Check missing-flag behavior (synthetic)")
+    df_flags = pd.DataFrame(
+        {
+            "student_id": [1, 2, 3],
+            "midterm_score": [80, None, 50],
+            "final_score": [None, None, None],
+            "assignment_count": [3, 1, 2],
+            "participation_level": ["상", "중", "하"],
+            "question_count": [1, 0, 2],
+            "night_study": [0, 1, 0],
+            "absence_count": [0, 2, 5],
+            "behavior_score": [0, -1, 1],
+        }
+    )
+
+    df_flags_out = preprocess_pipeline(df_flags)
+
+    assert "performance_score" in df_flags_out.columns, "performance_score column not created."
+    assert "performance_score_missing" in df_flags_out.columns, "performance_score_missing flag not created."
+    assert df_flags_out["performance_score_missing"].eq(1).all(), "performance_score_missing should be all 1s."
+    assert df_flags_out["final_score_missing"].eq(1).all(), "final_score_missing should be all 1s."
+
+    mid_missing = df_flags_out["midterm_score_missing"].tolist()
+    assert mid_missing == [0, 1, 0], f"midterm_score_missing unexpected: {mid_missing}"
 
     print("\n✅ Smoke test passed — preprocessing is production-ready.")
 
