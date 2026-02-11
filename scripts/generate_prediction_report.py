@@ -15,7 +15,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 import joblib
 import pandas as pd
 
-from src.config import FEATURE_COLS
+from src.config import FEATURE_COLS, SCORE_RULE
 from src.preprocessing import load_csv, preprocess_pipeline, basic_cleaning
 
 DATA_PATH = PROJECT_ROOT / "data/dummy/dummy_midterm_like_labeled.csv"
@@ -113,13 +113,104 @@ def main() -> pd.DataFrame:
         return ", ".join(reasons[:3]) if reasons else "특이 요인 없음"
 
     df_result["top_reasons"] = df_result.apply(build_reasons, axis=1)
+    
+    # 7) Score guidance message (closure using SCORE_RULE)
+    def clamp_score(x: float, smax: float) -> float:
+        # 필요한 점수가 0 미만이면 0, 만점 초과면 만점으로 클램프
+        if x < 0:
+            return 0.0
+        if x > smax:
+            return float(smax)
+        return float(x)
+    
+    def to_w(pct: float) -> float:
+        return float(pct) / 100.0
+    
+    T = float(SCORE_RULE["threshold"])
 
-    # 7) Column order (readability)
+    mmax = float(SCORE_RULE["midterm_max"])
+    fmax = float(SCORE_RULE["final_max"])
+    pmax = float(SCORE_RULE["performance_max"])
+
+    wm = to_w(SCORE_RULE["midterm_weight"])
+    wf = to_w(SCORE_RULE["final_weight"])
+    wp = to_w(SCORE_RULE["performance_weight"])
+    
+    w_sum = wm + wf + wp
+    if abs(w_sum - 1.0) > 1e-6:
+        raise ValueError(f"가중치 합이 100%가 아닙니다: {w_sum*100:.2f}%")
+    
+    def score_guidance(row: pd.Series) -> str:
+    # 원본 점수(채워진 값일 수 있으므로, missing flag로 결측 여부 판단)
+        mid = pd.to_numeric(row.get("midterm_score"), errors="coerce")
+        fin = pd.to_numeric(row.get("final_score"), errors="coerce")
+        perf = pd.to_numeric(row.get("performance_score"), errors="coerce")
+
+        mid_miss = int(row.get("midterm_score_missing", 0)) == 1
+        fin_miss = int(row.get("final_score_missing", 0)) == 1
+        perf_miss = int(row.get("performance_score_missing", 0)) == 1
+
+        # 중간까지 결측인 데이터는 현실적으로 안내가 애매하므로 메시지 축소
+        if mid_miss or pd.isna(mid):
+            return "중간고사 점수 정보가 없어 성취율 역산 안내를 제공할 수 없습니다."
+
+        # 현재 확보된 기여(결측 항목은 제외)
+        base = (mid / mmax) * wm
+        if (not fin_miss) and pd.notna(fin):
+            base += (fin / fmax) * wf
+        if (not perf_miss) and pd.notna(perf):
+            base += (perf / pmax) * wp
+
+        # 이미 기준 충족이면 안내 불필요
+        if base >= T:
+            return "현재 입력된 점수 기준으로 성취율 40% 기준을 충족합니다."
+
+        needed = T - base  # 추가로 필요한 비율 기여
+
+        # 케이스 분기
+        if fin_miss and (not perf_miss):
+            # 기말만 결측 -> 기말 최소 점수
+            req_final = (needed / wf) * fmax if wf > 0 else float("inf")
+            req_final = clamp_score(req_final, fmax)
+            return f"기말고사에서 최소 {req_final:.1f}점(/{fmax:.0f}) 이상 필요합니다."
+
+        if perf_miss and (not fin_miss):
+            # 수행만 결측 -> 수행 최소 점수
+            req_perf = (needed / wp) * pmax if wp > 0 else float("inf")
+            req_perf = clamp_score(req_perf, pmax)
+            return f"수행평가에서 최소 {req_perf:.1f}점(/{pmax:.0f}) 이상 필요합니다."
+
+        if fin_miss and perf_miss:
+            # 둘 다 결측 -> 시나리오 2줄(사용자 친화)
+            # 1) 수행 만점 가정 시 기말 필요
+            base_perf_full = base + (1.0 * wp)  # 수행 만점 기여
+            needed_final = max(0.0, T - base_perf_full)
+            req_final = (needed_final / wf) * fmax if wf > 0 else float("inf")
+            req_final = clamp_score(req_final, fmax)
+
+            # 2) 기말 만점 가정 시 수행 필요
+            base_final_full = base + (1.0 * wf)  # 기말 만점 기여
+            needed_perf = max(0.0, T - base_final_full)
+            req_perf = (needed_perf / wp) * pmax if wp > 0 else float("inf")
+            req_perf = clamp_score(req_perf, pmax)
+
+            return (
+                f"[시나리오] 수행 만점 가정 시 기말 최소 {req_final:.1f}점(/{fmax:.0f}) 필요 / "
+                f"기말 만점 가정 시 수행 최소 {req_perf:.1f}점(/{pmax:.0f}) 필요"
+            )
+
+        # 결측이 없는데도 base<T인 경우: 단순 안내
+        return "현재 입력된 점수 기준으로 성취율 40% 미달입니다."
+
+    df_result["score_guidance"] = df_result.apply(score_guidance, axis=1)
+    
+    # 8) Column order (readability)
     preferred_cols = [
         "student_id",
         "risk_proba",
         "risk_level",
         "top_reasons",
+        "score_guidance",
         "action",
         "participation_risk_score",
         "participation_flag",
