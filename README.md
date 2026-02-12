@@ -279,3 +279,13 @@ reports/tables/prediction_report_YYYYMMDD.csv
 생성된 리포트는 교사의 판단을 보조하는 참고 자료로 활용하시기 바랍니다.
 
 ---
+
+## Legacy Scripts
+
+- `_legacy_00_generate_dummy_dataset.ipynb`
+  과거 더미 데이터 생성 노트북입니다.
+  최신 더미 데이터는 `00_generate_dummy_dataset.py`를 사용합니다.
+
+- `scripts/_legacy_generate_prediction_report.py`  
+  과거 버전(참고용)입니다. 현재는 공통 로직(`src/report_logic.py`) 기반으로 리포트 생성이 이루어지며,
+  최신 스크립트는 `scripts/generate_prediction_report.py`를 사용합니다.

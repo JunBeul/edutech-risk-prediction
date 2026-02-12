@@ -1,5 +1,7 @@
 """
-Generate Risk Prediction Report
+[LEGACY] Generate Risk Prediction Report
+참고용 스크립트입니다.
+현재는 src/report_logic.py 기반 구조를 사용합니다.
 
 Usage:
 python -m scripts.generate_prediction_report
