@@ -1,11 +1,13 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from pathlib import Path
+from fastapi.middleware.cors import CORSMiddleware
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 MODEL_PATH = PROJECT_ROOT / "models/logistic_model.joblib"
 
 import pandas as pd
 import joblib
+import os
 
 from src.config import FEATURE_COLS
 from src.preprocessing import preprocess_pipeline
@@ -19,6 +21,32 @@ from src.report_logic import (
 
 app = FastAPI(title="EduTech Risk Prediction API")
 
+# -----------------------------
+# CORS (React 연동용)
+# -----------------------------
+# 기본: 로컬 개발 환경(React)
+default_origins = [
+    "http://localhost:5173",  # Vite
+    "http://localhost:3000",  # CRA (혹시 사용할 경우)
+]
+# 배포 시: 환경변수로 오버라이드 가능 (콤마 구분)
+env_origins = os.getenv("ALLOWED_ORIGINS", "").strip()
+if env_origins:
+    allow_origins = [o.strip() for o in env_origins.split(",") if o.strip()]
+else:
+    allow_origins = default_origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allow_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# -----------------------------
+# Health Check & Root
+# -----------------------------
+
 @app.get("/")
 def root():
     return {"message": "EduTech Risk Prediction API"}
@@ -27,9 +55,9 @@ def root():
 def health():
     return {"status": "ok"}
 
-# =====================================
+# -----------------------------
 # main prediction logic
-# =====================================
+# -----------------------------
 
 @app.post("/predict")
 async def predict(
