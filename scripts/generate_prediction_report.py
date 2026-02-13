@@ -9,7 +9,7 @@ Generate Risk Prediction Report (Refactored)
 
 정책 주입 예시:
     python -m scripts.generate_prediction_report --data data/dummy/dummy_midterm_like_labeled.csv
-    python -m scripts.generate_prediction_report --policy-json '{"threshold":0.4,...}'
+    python -m scripts.generate_prediction_report --policy-json '{\"threshold\":0.4,\"midterm_max\":100,\"midterm_weight\":40,\"final_max\":100,\"final_weight\":40,\"performance_max\":100,\"performance_weight\":20,\"total_classes\":160}'
 """
 
 from __future__ import annotations

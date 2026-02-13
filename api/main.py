@@ -1,13 +1,17 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.responses import FileResponse
 from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-MODEL_PATH = PROJECT_ROOT / "models/logistic_model.joblib"
-
+from datetime import datetime
 import pandas as pd
 import joblib
 import os
+import uuid
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+MODEL_PATH = PROJECT_ROOT / "models/logistic_model.joblib"
+REPORT_DIR = PROJECT_ROOT / "reports" / "tables"
+REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 from src.config import FEATURE_COLS
 from src.preprocessing import preprocess_pipeline
@@ -61,8 +65,9 @@ def health():
 
 @app.post("/predict")
 async def predict(
-    file: UploadFile = File(...),   # '...'는 필수 항목임을 나타냄, Ellipsis는 한국어로 '생략'이라는 뜻
+    file: UploadFile = File(...),
     policy: str = Form(...),   # multipart JSON 문자열
+    # policy test : {"threshold": 0.40,"midterm_max": 100,"midterm_weight": 40,"final_max": 100,"final_weight": 40,"performance_max": 100,"performance_weight": 20,"total_classes": 160}
 ):
     try:
         # 1. CSV → DataFrame
@@ -88,16 +93,40 @@ async def predict(
         df_result["risk_level"] = df_result["risk_proba"].apply(assign_risk_level)
         df_result["action"] = df_result["risk_level"].apply(assign_action)
 
-        # 공통 로직 호출
+        # 5. 공통 로직 호출
         df_result = enrich_report(df_result, policy_obj)
+        
+        # 6. CSV 저장
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        token = uuid.uuid4().hex[:8]
+        report_filename = f"prediction_report_{ts}_{token}.csv"
+        output_path = REPORT_DIR / report_filename
 
-        # 6. JSON 안전 변환
+        # CSV 저장은 원본(df_result) 그대로 저장(문자열 None 등은 CSV에서 공백으로 보일 수 있음)
+        df_result.to_csv(output_path, index=False, encoding="utf-8-sig")
+
+        report_url = f"/download/{report_filename}"
+
+        # 7. JSON 안전 변환
         df_result = safe_json_df(df_result)
 
         return {
             "rows": len(df_result),
-            "data": df_result.to_dict(orient="records"),
+            "report_filename": report_filename,
+            "report_url": report_url,
+            "data": safe_json_df(df_result).to_dict(orient="records"),
         }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/download/{filename}")
+def download_report(filename: str):
+    path = REPORT_DIR / filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
+    return FileResponse(
+        path,
+        media_type="text/csv",
+        filename=filename,
+    )
