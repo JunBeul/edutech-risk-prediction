@@ -1,0 +1,30 @@
+{
+  "name": "edutech-risk-prediction",
+  "version": "1.0.0",
+  "description": "정보·컴퓨터 교과에서 **최소성취수준 보장지도(최성보) 위험군 학생을 학기 중간 시점에 조기 예측**하기 위한  \r EduTech 데이터 분석 및 AI 예측 프로젝트입니다.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "concurrently -n BACK,FRONT -c yellow,cyan \"python -m uvicorn api.main:app --reload --port 8000\" \"npm --prefix client run dev\"",
+    "dev:back": "python -m uvicorn api.main:app --reload --port 8000",
+    "dev:front": "npm --prefix client run dev",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JunBeul/edutech-risk-prediction.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/JunBeul/edutech-risk-prediction/issues"
+  },
+  "homepage": "https://github.com/JunBeul/edutech-risk-prediction#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
