@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { labelOf } from '../shared/columnLabels';
-import UploadModal from '../components/UploadModal';
-import ColumnSelectorModal from '../components/ColumnSelectorModal';
-import DetailDrawer from '../components/DetailDrawer';
-import RiskBadge from '../components/RiskBadge';
-import DashboardHeader from '../components/DashboardHeader';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+import UploadModal from '../components/upload/UploadModal';
+import ColumnSelectorModal from '../components/dashboard/ColumnSelectorModal';
+import DetailDrawer from '../components/dashboard/DetailDrawer';
+import RiskBadge from '../components/dashboard/RiskBadge';
+import DashboardHeader from '../components/dashboard/DashboardHeader';
 
 import '../styles/table.scss';
 
@@ -45,21 +46,9 @@ export default function DashboardPage() {
 
 	const reportKey = result?.report_filename ?? '';
 	const visibleColumns = columnState.reportKey === reportKey ? columnState.cols : defaultCols;
-	const isOverlayOpen = UploadModalOpen || colModalOpen || selectedRow !== null;
+	const isScrollLockOpen = UploadModalOpen || colModalOpen;
 
-	useEffect(() => {
-		const prevOverflow = document.body.style.overflow;
-
-		if (isOverlayOpen) {
-			document.body.style.overflow = 'hidden';
-		} else {
-			document.body.style.overflow = '';
-		}
-
-		return () => {
-			document.body.style.overflow = prevOverflow;
-		};
-	}, [isOverlayOpen]);
+	useBodyScrollLock(isScrollLockOpen);
 
 	const handleColumnsChange = (cols: string[]) => {
 		setColumnState({ reportKey, cols });

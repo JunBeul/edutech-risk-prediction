@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import UploadModal from '../components/UploadModal';
+import UploadModal from '../components/upload/UploadModal';
 
 export default function LandingPage() {
 	const [open, setOpen] = useState(false);

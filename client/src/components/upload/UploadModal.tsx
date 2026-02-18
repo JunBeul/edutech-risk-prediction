@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { predictCsv } from '../lib/api';
-import type { EvaluationPolicy } from '../lib/types';
+import { predictCsv } from '../../shared/api';
+import type { EvaluationPolicy } from '../../shared/types';
+import { useEscapeClose } from '../../hooks/useEscapeClose';
 
-import '../styles/modal.scss';
+import '../../styles/modal.scss';
 
 type Props = {
 	onClose: () => void;
@@ -20,16 +21,7 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 	const navigate = useNavigate();
 	const [file, setFile] = useState<File | null>(null);
 
-	useEffect(() => {
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if (event.key === 'Escape') {
-				onClose();
-			}
-		};
-
-		window.addEventListener('keydown', handleKeyDown);
-		return () => window.removeEventListener('keydown', handleKeyDown);
-	}, [onClose]);
+	useEscapeClose(onClose);
 
 	// 입력은 string으로 들고 있다가, 제출 시 number 변환(HTML input 특성 대응)
 	const [form, setForm] = useState({

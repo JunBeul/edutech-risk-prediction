@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
-import { labelOf } from '../shared/columnLabels';
-import '../styles/modal.scss';
+import { labelOf } from '../../shared/columnLabels';
+import { useEscapeClose } from '../../hooks/useEscapeClose';
+import '../../styles/modal.scss';
 
 type Props = {
 	allColumns: string[];
@@ -10,16 +10,7 @@ type Props = {
 };
 
 export default function ColumnSelectorModal({ allColumns, visibleColumns, onChange, onClose }: Props) {
-	useEffect(() => {
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if (event.key === 'Escape') {
-				onClose();
-			}
-		};
-
-		window.addEventListener('keydown', handleKeyDown);
-		return () => window.removeEventListener('keydown', handleKeyDown);
-	}, [onClose]);
+	useEscapeClose(onClose);
 
 	const toggle = (col: string) => {
 		if (visibleColumns.includes(col)) {
