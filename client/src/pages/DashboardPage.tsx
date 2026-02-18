@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import UploadModal from '../components/UploadModal';
 import ColumnSelectorModal from '../components/ColumnSelectorModal';
+import DetailDrawer from '../components/DetailDrawer';
 
 type PredictResponse = {
 	rows: number;
@@ -24,6 +25,7 @@ export default function DashboardPage() {
 		reportKey: '',
 		cols: []
 	});
+	const [selectedRow, setSelectedRow] = useState<Record<string, unknown> | null>(null);
 
 	const result = (location.state as DashboardLocationState | null)?.result;
 
@@ -74,9 +76,9 @@ export default function DashboardPage() {
 					</thead>
 					<tbody>
 						{result.data.map((row, i) => (
-							<tr key={i}>
-								{visibleColumns.map((column) => (
-									<td key={column}>{String(row[column] ?? '')}</td>
+							<tr key={i} onClick={() => setSelectedRow(row)} style={{ cursor: 'pointer' }}>
+								{visibleColumns.map((c) => (
+									<td key={c}>{String((row as any)[c] ?? '')}</td>
 								))}
 							</tr>
 						))}
@@ -85,8 +87,8 @@ export default function DashboardPage() {
 			</section>
 
 			{open && <UploadModal onClose={() => setOpen(false)} onSuccessNavigateTo='/dashboard' />}
-
 			{colModalOpen && <ColumnSelectorModal allColumns={allColumns} visibleColumns={visibleColumns} onChange={handleColumnsChange} onClose={() => setColModalOpen(false)} />}
+			{selectedRow && <DetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />}
 		</div>
 	);
 }
