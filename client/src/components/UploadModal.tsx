@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { predictCsv } from '../lib/api';
 import type { EvaluationPolicy } from '../lib/types';
 
+import '../styles/modal.scss';
+
 type Props = {
 	onClose: () => void;
 	onSuccessNavigateTo: string;
@@ -99,15 +101,7 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 	};
 
 	return (
-		<div
-			style={{
-				position: 'fixed',
-				inset: 0,
-				background: 'rgba(0,0,0,0.4)',
-				display: 'grid',
-				placeItems: 'center'
-			}}
-		>
+		<div className='modal_box'>
 			<div style={{ background: 'white', padding: 16, width: 'min(560px, 92vw)' }}>
 				<h3>파일 업로드</h3>
 

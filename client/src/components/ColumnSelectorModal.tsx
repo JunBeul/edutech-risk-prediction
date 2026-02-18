@@ -1,3 +1,5 @@
+import '../styles/modal.scss';
+
 type Props = {
 	allColumns: string[];
 	visibleColumns: string[];
@@ -16,21 +18,8 @@ export default function ColumnSelectorModal({ allColumns, visibleColumns, onChan
 	};
 
 	return (
-		<div
-			style={{
-				position: 'fixed',
-				inset: 0,
-				background: 'rgba(0,0,0,0.4)',
-				display: 'grid',
-				placeItems: 'center',
-				zIndex: 1000
-			}}
-			onClick={onClose}
-		>
-			<div
-				style={{ background: 'white', padding: 16, width: 'min(560px, 92vw)', maxHeight: '80vh', overflow: 'auto' }}
-				onClick={(e) => e.stopPropagation()}
-			>
+		<div className='modal_box' onClick={onClose}>
+			<div style={{ background: 'white', padding: 16, width: 'min(560px, 92vw)', maxHeight: '80vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
 				<h3>컬럼 선택</h3>
 
 				<div style={{ display: 'grid', gap: 8 }}>
