@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { labelOf } from '../shared/columnLabels';
 import '../styles/modal.scss';
 
 type Props = {
@@ -40,7 +41,7 @@ export default function ColumnSelectorModal({ allColumns, visibleColumns, onChan
 					{allColumns.map((col) => (
 						<label key={col} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
 							<input type='checkbox' checked={visibleColumns.includes(col)} onChange={() => toggle(col)} />
-							{col}
+							{labelOf(col)}
 						</label>
 					))}
 				</div>

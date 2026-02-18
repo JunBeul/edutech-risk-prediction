@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import { labelOf } from '../shared/columnLabels';
 import UploadModal from '../components/UploadModal';
 import ColumnSelectorModal from '../components/ColumnSelectorModal';
 import DetailDrawer from '../components/DetailDrawer';
 import RiskBadge from '../components/RiskBadge';
+import DashboardHeader from '../components/DashboardHeader';
 
 import '../styles/table.scss';
 
@@ -69,17 +71,7 @@ export default function DashboardPage() {
 
 	return (
 		<div>
-			<header style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-				<h2 style={{ marginRight: 'auto' }}>Edutech Risk Prediction</h2>
-
-				<button onClick={() => setOpen(true)}>파일 업로드</button>
-
-				<a href={`http://127.0.0.1:8000${result.report_url}`} download>
-					CSV 다운로드
-				</a>
-
-				<button onClick={() => setColModalOpen(true)}>+ 컬럼</button>
-			</header>
+			<DashboardHeader onOpenUpload={() => setOpen(true)} onOpenColumns={() => setColModalOpen(true)} reportUrl={result.report_url} />
 
 			<section>
 				<p>rows: {result.rows}</p>
@@ -88,7 +80,7 @@ export default function DashboardPage() {
 						<thead>
 							<tr>
 								{visibleColumns.map((column) => (
-									<th key={column}>{column}</th>
+									<th key={column}>{labelOf(column)}</th>
 								))}
 							</tr>
 						</thead>
