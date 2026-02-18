@@ -1,0 +1,31 @@
+.table-wrapper {
+	overflow-x: auto;
+}
+
+.dashboard-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 14px;
+
+	th,
+	td {
+		padding: 10px 12px;
+		border-bottom: 1px solid #eee;
+		text-align: left;
+	}
+
+	thead {
+		background: #f9fafb;
+		position: sticky;
+		top: 0;
+	}
+
+	tbody tr {
+		transition: background 0.15s;
+		cursor: pointer;
+
+		&:hover {
+			background: #f3f4f6;
+		}
+	}
+}

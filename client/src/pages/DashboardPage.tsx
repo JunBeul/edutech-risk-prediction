@@ -3,6 +3,9 @@ import { Navigate, useLocation } from 'react-router-dom';
 import UploadModal from '../components/UploadModal';
 import ColumnSelectorModal from '../components/ColumnSelectorModal';
 import DetailDrawer from '../components/DetailDrawer';
+import RiskBadge from '../components/RiskBadge';
+
+import '../styles/table.scss';
 
 type PredictResponse = {
 	rows: number;
@@ -15,7 +18,7 @@ type DashboardLocationState = {
 	result?: PredictResponse;
 };
 
-const PRIORITY_COLUMNS = ['student_id', 'risk_proba', 'risk_level', 'top_reasons', 'action', 'score_guidance', 'remaining_absence_allowance'];
+const PRIORITY_COLUMNS = ['student_id', 'risk_proba', 'risk_level', 'top_reasons', 'remaining_absence_allowance'];
 
 export default function DashboardPage() {
 	const location = useLocation();
@@ -65,25 +68,40 @@ export default function DashboardPage() {
 
 			<section>
 				<p>rows: {result.rows}</p>
-
-				<table>
-					<thead>
-						<tr>
-							{visibleColumns.map((column) => (
-								<th key={column}>{column}</th>
-							))}
-						</tr>
-					</thead>
-					<tbody>
-						{result.data.map((row, i) => (
-							<tr key={i} onClick={() => setSelectedRow(row)} style={{ cursor: 'pointer' }}>
-								{visibleColumns.map((c) => (
-									<td key={c}>{String((row as any)[c] ?? '')}</td>
+				<div className='table-wrapper'>
+					<table className='dashboard-table'>
+						<thead>
+							<tr>
+								{visibleColumns.map((column) => (
+									<th key={column}>{column}</th>
 								))}
 							</tr>
-						))}
-					</tbody>
-				</table>
+						</thead>
+						<tbody>
+							{result.data.map((row, i) => (
+								<tr key={i} onClick={() => setSelectedRow(row)} style={{ cursor: 'pointer' }}>
+									{visibleColumns.map((c) => {
+										const value = (row as any)[c];
+
+										if (c === 'risk_level') {
+											return (
+												<td key={c}>
+													<RiskBadge level={String(value)} />
+												</td>
+											);
+										}
+
+										if (c === 'risk_proba') {
+											return <td key={c}>{(Number(value) * 100).toFixed(1)}%</td>;
+										}
+
+										return <td key={c}>{String(value ?? '')}</td>;
+									})}
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
 			</section>
 
 			{open && <UploadModal onClose={() => setOpen(false)} onSuccessNavigateTo='/dashboard' />}
