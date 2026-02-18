@@ -14,23 +14,42 @@
 	.drawer_header {
 		z-index: 30;
 
-		padding: 16px;
 		width: 100%;
 		box-sizing: border-box;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
 		position: sticky;
 		top: 0;
 		background: white;
-
-		.drawer_title {
-			font-size: 18px;
-			font-weight: 600;
-		}
+		padding: 16px;
 	}
+
 	.drawer_body {
 		padding: 16px;
 		box-sizing: border-box;
+
+		.drawer_row {
+			display: flex;
+			gap: 20px;
+
+			.key {
+				font-weight: bolder;
+				text-align: right;
+				color: #555;
+				min-width: 130px;
+				flex-shrink: 0;
+			}
+			.value {
+				flex-grow: 1;
+				color: #333;
+			}
+		}
+
+		.row_midterm_score_missing,
+		.row_final_score_missing,
+		.row_performance_score_missing,
+		.row_participation_level_num,
+		.row_participation_risk_score,
+		.row_participation_flag {
+			display: none;
+		}
 	}
 }

@@ -1,5 +1,6 @@
-import { labelOf } from '../../shared/columnLabels';
+﻿import { labelOf } from '../../shared/columnLabels';
 import { useEscapeClose } from '../../hooks/useEscapeClose';
+import OverlayHeader from '../common/OverlayHeader';
 import '../../styles/modal.scss';
 
 type Props = {
@@ -24,10 +25,7 @@ export default function ColumnSelectorModal({ allColumns, visibleColumns, onChan
 	return (
 		<div className='modal_wapper' onClick={onClose}>
 			<div className='modal_container' onClick={(e) => e.stopPropagation()}>
-				<div className='modal_header'>
-					<h3>컬럼 선택</h3>
-					<button onClick={onClose}>닫기</button>
-				</div>
+				<OverlayHeader title='컬럼 선택' onClose={onClose} className='modal_header' />
 				<div className='modal_body'>
 					{allColumns.map((col) => (
 						<label key={col} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -40,3 +38,4 @@ export default function ColumnSelectorModal({ allColumns, visibleColumns, onChan
 		</div>
 	);
 }
+

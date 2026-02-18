@@ -3,7 +3,9 @@
 
 	position: fixed;
 	inset: 0;
-	background: rgba(0, 0, 0, 0.4);
+	background: rgba(0, 0, 0, 0.2);
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
 	display: grid;
 	place-items: center;
 
@@ -20,10 +22,6 @@
 
 		.modal_header {
 			z-index: 30;
-
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
 			margin-bottom: 12px;
 		}
 

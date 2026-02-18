@@ -1,4 +1,6 @@
-import { useEscapeClose } from '../../hooks/useEscapeClose';
+﻿import { useEscapeClose } from '../../hooks/useEscapeClose';
+import { labelOf } from '../../shared/columnLabels';
+import OverlayHeader from '../common/OverlayHeader';
 import '../../styles/detailDrawer.scss';
 
 type Props = {
@@ -13,21 +15,16 @@ export default function DetailDrawer({ row, onClose }: Props) {
 
 	return (
 		<div className='drawer_container'>
-			<div className='drawer_header'>
-				<h3 className='drawer_title'>{studentId} 학생 상세정보</h3>
-				<button onClick={onClose}>닫기</button>
-			</div>
-
+			<OverlayHeader title={studentId + ' 학생 상세정보'} onClose={onClose} className='drawer_header' />
 			<div className='drawer_body'>
 				{Object.entries(row).map(([key, value]) => (
-					<div key={key} style={{ marginBottom: 8 }}>
-						<div>
-							<strong>{key}</strong>
-						</div>
-						<div>{String(value ?? '')}</div>
+					<div key={key} style={{ marginBottom: 8 }} className={`drawer_row ${'row_' + key}`}>
+						<div className='key'>{labelOf(key)}</div>
+						<div className='value'>{String(value ?? '')}</div>
 					</div>
 				))}
 			</div>
 		</div>
 	);
 }
+

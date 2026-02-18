@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { predictCsv } from '../../shared/api';
 import type { EvaluationPolicy } from '../../shared/types';
 import { useEscapeClose } from '../../hooks/useEscapeClose';
+import OverlayHeader from '../common/OverlayHeader';
 
 import '../../styles/modal.scss';
 
@@ -98,13 +99,9 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 	};
 
 	return (
-		<div className='modal_wapper'>
+		<div className='modal_wapper' onClick={onClose}>
 			<div className='modal_container' onClick={(e) => e.stopPropagation()}>
-				<div className='modal_header'>
-					<h3>파일 업로드</h3>
-					<button onClick={onClose}>닫기</button>
-				</div>
-
+				<OverlayHeader title='파일 업로드' onClose={onClose} className='modal_header' />
 				<div className='modal_body'>
 					<input type='file' accept='.csv' onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
 
@@ -160,7 +157,6 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 						</div>
 					)}
 				</div>
-
 				<div className='modal_footer'>
 					<button onClick={onSubmit} disabled={!canSubmit}>
 						업로드
@@ -170,3 +166,4 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 		</div>
 	);
 }
+
