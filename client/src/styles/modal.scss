@@ -1,8 +1,40 @@
-.modal_box {
+.modal_wapper {
+	z-index: 10;
+
 	position: fixed;
 	inset: 0;
 	background: rgba(0, 0, 0, 0.4);
-	display: grid;
-	place-items: center;
-	z-index: 1000;
+
+	.modal_container {
+		z-index: 20;
+
+		background: #ffffff;
+		border-radius: 12px;
+		padding: 20px;
+		width: min(560px, 92vw);
+		max-height: 90vh;
+		overflow-y: auto;
+		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+
+		.modal_header {
+			z-index: 30;
+
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 12px;
+		}
+
+		.modal_body {
+			display: grid;
+			gap: 12px;
+		}
+
+		.modal_footer {
+			display: flex;
+			justify-content: flex-end;
+			gap: 8px;
+			margin-top: 16px;
+		}
+	}
 }

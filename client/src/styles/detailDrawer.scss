@@ -1,0 +1,44 @@
+.drawer_wapper {
+	z-index: 10;
+
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.4);
+
+	.drawer_container {
+		z-index: 20;
+
+		position: fixed;
+		top: 1.5%;
+		right: 0;
+		height: 97%;
+		width: min(45%, 100vw);
+		background: white;
+		box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+		overflow-y: auto;
+		border-radius: 12px 0 0 12px;
+
+		.drawer_header {
+			z-index: 30;
+
+			padding: 16px;
+			width: 100%;
+			box-sizing: border-box;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			position: sticky;
+			top: 0;
+			background: white;
+
+			.drawer_title {
+				font-size: 18px;
+				font-weight: 600;
+			}
+		}
+		.drawer_body {
+			padding: 16px;
+			box-sizing: border-box;
+		}
+	}
+}

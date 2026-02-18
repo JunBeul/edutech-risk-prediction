@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import UploadModal from '../components/UploadModal';
 import ColumnSelectorModal from '../components/ColumnSelectorModal';
@@ -22,7 +22,7 @@ const PRIORITY_COLUMNS = ['student_id', 'risk_proba', 'risk_level', 'top_reasons
 
 export default function DashboardPage() {
 	const location = useLocation();
-	const [open, setOpen] = useState(false);
+	const [UploadModalOpen, setOpen] = useState(false);
 	const [colModalOpen, setColModalOpen] = useState(false);
 	const [columnState, setColumnState] = useState<{ reportKey: string; cols: string[] }>({
 		reportKey: '',
@@ -43,6 +43,21 @@ export default function DashboardPage() {
 
 	const reportKey = result?.report_filename ?? '';
 	const visibleColumns = columnState.reportKey === reportKey ? columnState.cols : defaultCols;
+	const isOverlayOpen = UploadModalOpen || colModalOpen || selectedRow !== null;
+
+	useEffect(() => {
+		const prevOverflow = document.body.style.overflow;
+
+		if (isOverlayOpen) {
+			document.body.style.overflow = 'hidden';
+		} else {
+			document.body.style.overflow = '';
+		}
+
+		return () => {
+			document.body.style.overflow = prevOverflow;
+		};
+	}, [isOverlayOpen]);
 
 	const handleColumnsChange = (cols: string[]) => {
 		setColumnState({ reportKey, cols });
@@ -55,7 +70,7 @@ export default function DashboardPage() {
 	return (
 		<div>
 			<header style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-				<h2 style={{ marginRight: 'auto' }}>대시보드</h2>
+				<h2 style={{ marginRight: 'auto' }}>Edutech Risk Prediction</h2>
 
 				<button onClick={() => setOpen(true)}>파일 업로드</button>
 
@@ -104,7 +119,7 @@ export default function DashboardPage() {
 				</div>
 			</section>
 
-			{open && <UploadModal onClose={() => setOpen(false)} onSuccessNavigateTo='/dashboard' />}
+			{UploadModalOpen && <UploadModal onClose={() => setOpen(false)} onSuccessNavigateTo='/dashboard' />}
 			{colModalOpen && <ColumnSelectorModal allColumns={allColumns} visibleColumns={visibleColumns} onChange={handleColumnsChange} onClose={() => setColModalOpen(false)} />}
 			{selectedRow && <DetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />}
 		</div>

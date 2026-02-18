@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { predictCsv } from '../lib/api';
 import type { EvaluationPolicy } from '../lib/types';
@@ -19,6 +19,17 @@ function toNumber(v: string): number {
 export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 	const navigate = useNavigate();
 	const [file, setFile] = useState<File | null>(null);
+
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key === 'Escape') {
+				onClose();
+			}
+		};
+
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, [onClose]);
 
 	// 입력은 string으로 들고 있다가, 제출 시 number 변환(HTML input 특성 대응)
 	const [form, setForm] = useState({
@@ -59,24 +70,18 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 		}
 
 		// 범위/제약
-		if (policy.threshold <= 0 || policy.threshold >= 1) {
-			errs.push('threshold는 0~1 사이(예: 0.4)여야 합니다.');
-		}
+		if (policy.threshold <= 0 || policy.threshold >= 1) errs.push('threshold는 0~1 사이(예: 0.4)여야 합니다.');
 		if (policy.midterm_max <= 0) errs.push('중간고사 만점은 1 이상이어야 합니다.');
 		if (policy.final_max <= 0) errs.push('기말고사 만점은 1 이상이어야 합니다.');
 		if (policy.performance_max <= 0) errs.push('수행평가 만점은 1 이상이어야 합니다.');
 		if (policy.total_classes <= 0) errs.push('총 수업 횟수는 1 이상이어야 합니다.');
 
+		// 반영비율 합 체크
 		const wSum = policy.midterm_weight + policy.final_weight + policy.performance_weight;
-
-		if (wSum !== 100) {
-			errs.push(`반영비율 합이 100이어야 합니다. (현재: ${wSum})`);
-		}
+		if (wSum !== 100) errs.push(`반영비율 합이 100이어야 합니다. (현재: ${wSum})`);
 
 		// 음수 금지
-		if (policy.midterm_weight < 0 || policy.final_weight < 0 || policy.performance_weight < 0) {
-			errs.push('반영비율은 음수가 될 수 없습니다.');
-		}
+		if (policy.midterm_weight < 0 || policy.final_weight < 0 || policy.performance_weight < 0) errs.push('반영비율은 음수가 될 수 없습니다.');
 
 		return errs;
 	}, [policy]);
@@ -101,16 +106,19 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 	};
 
 	return (
-		<div className='modal_box'>
-			<div style={{ background: 'white', padding: 16, width: 'min(560px, 92vw)' }}>
-				<h3>파일 업로드</h3>
+		<div className='modal_wapper'>
+			<div className='modal_container' onClick={(e) => e.stopPropagation()}>
+				<div className='modal_header'>
+					<h3>파일 업로드</h3>
+					<button onClick={onClose}>닫기</button>
+				</div>
 
-				<div style={{ display: 'grid', gap: 8 }}>
+				<div className='modal_body'>
 					<input type='file' accept='.csv' onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
 
 					<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
 						<label>
-							threshold(0~1)
+							최성보 비율
 							<input value={form.threshold} onChange={(e) => setField('threshold', e.target.value)} />
 						</label>
 
@@ -149,7 +157,6 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 							<input value={form.performance_weight} onChange={(e) => setField('performance_weight', e.target.value)} />
 						</label>
 					</div>
-
 					{errors.length > 0 && (
 						<div style={{ padding: 8, border: '1px solid #ddd' }}>
 							<strong>입력 오류</strong>
@@ -162,11 +169,10 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 					)}
 				</div>
 
-				<div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+				<div className='modal_footer'>
 					<button onClick={onSubmit} disabled={!canSubmit}>
 						업로드
 					</button>
-					<button onClick={onClose}>취소</button>
 				</div>
 			</div>
 		</div>
