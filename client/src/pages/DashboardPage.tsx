@@ -7,6 +7,7 @@ import ColumnSelectorModal from '../components/dashboard/ColumnSelectorModal';
 import DetailDrawer from '../components/dashboard/DetailDrawer';
 import RiskBadge from '../components/dashboard/RiskBadge';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
+import MobileFloatingNav from '../components/dashboard/MobileFloatingNav';
 
 import '../styles/table.scss';
 
@@ -77,7 +78,7 @@ export default function DashboardPage() {
 							{result.data.map((row, i) => (
 								<tr key={i} onClick={() => setSelectedRow(row)} style={{ cursor: 'pointer' }}>
 									{visibleColumns.map((c) => {
-										const value = (row as any)[c];
+										const value = row[c];
 
 										if (c === 'risk_level') {
 											return (
@@ -99,7 +100,7 @@ export default function DashboardPage() {
 					</table>
 				</div>
 			</section>
-
+			<MobileFloatingNav onOpenUpload={() => setOpen(true)} onOpenColumns={() => setColModalOpen(true)} reportUrl={result.report_url} />
 			{UploadModalOpen && <UploadModal onClose={() => setOpen(false)} onSuccessNavigateTo='/dashboard' />}
 			{colModalOpen && <ColumnSelectorModal allColumns={allColumns} visibleColumns={visibleColumns} onChange={handleColumnsChange} onClose={() => setColModalOpen(false)} />}
 			{selectedRow && <DetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />}

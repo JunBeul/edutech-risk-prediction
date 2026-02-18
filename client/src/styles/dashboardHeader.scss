@@ -1,3 +1,5 @@
+@use './breakpoints' as *;
+
 .dashboard_header {
 	display: flex;
 	gap: 8px;
@@ -13,6 +15,10 @@
 	-webkit-backdrop-filter: blur(6px);
 	border: 2px solid rgba(255, 255, 255, 0.7);
 
+	h2 {
+		font-size: 3rem;
+	}
+
 	&.is-scrolled {
 		height: 60px;
 		box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.15);
@@ -21,8 +27,30 @@
 			font-size: 1.5rem;
 		}
 	}
+}
 
-	h2 {
-		font-size: 3rem;
+@media (max-width: $mobile) {
+	.dashboard_header {
+		display: flex;
+		position: relative;
+		height: 80px;
+		text-align: center;
+
+		h2 {
+			width: 100%;
+			font-size: 24px;
+		}
+		button {
+			display: none;
+		}
+
+		&.is-scrolled {
+			height: 40px;
+			box-shadow: none;
+
+			h2 {
+				font-size: 16px;
+			}
+		}
 	}
 }
