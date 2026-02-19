@@ -1,24 +1,31 @@
-@use './breakpoints' as *;
-
 .table_wrapper {
 	width: 100%;
+	overflow: visible;
+}
+
+.table_scroll_x {
+	width: 100%;
+	overflow-x: auto;
+	overflow-y: visible;
+	-webkit-overflow-scrolling: touch;
 }
 
 .dashboard_table {
 	width: 100%;
-	border-collapse: collapse;
+	min-width: max-content;
+	border-collapse: separate;
+	border-spacing: 0;
 
 	th,
 	td {
 		padding: 10px 12px;
 		border-bottom: 1px solid #eee;
 		text-align: left;
+		white-space: nowrap;
 	}
 	thead th {
 		background: #f9fafb;
-		position: sticky;
-		top: 60px;
-		z-index: 6;
+		position: static;
 		transition: none;
 	}
 
@@ -31,8 +38,13 @@
 	}
 }
 
-@media (max-width: $mobile) {
-	.dashboard_table thead th {
-		top: 40px;
-	}
+.dashboard_table_head_overlay {
+	position: fixed;
+	z-index: 6;
+	overflow: hidden;
+}
+
+.dashboard_table_overlay {
+	margin: 0;
+	will-change: transform;
 }
