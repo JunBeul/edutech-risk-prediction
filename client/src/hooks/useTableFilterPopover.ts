@@ -18,6 +18,32 @@ type UseTableFilterPopoverResult = {
 
 const EMPTY_HIDDEN_SET = new Set<string>();
 const asText = (row: Record<string, unknown>, key: string) => String(row[key] ?? '');
+const cloneRect = (rect: DOMRect) => new DOMRect(rect.x, rect.y, rect.width, rect.height);
+
+const findHeaderCell = (column: string): HTMLElement | null => {
+	const overlayHeaders = document.querySelectorAll<HTMLElement>('.dashboard_table_head_overlay th[data-col-key]');
+	const overlayMatch = Array.from(overlayHeaders).find((el) => el.dataset.colKey === column);
+	if (overlayMatch) return overlayMatch;
+
+	const baseHeaders = document.querySelectorAll<HTMLElement>('.table_wrapper .dashboard_table thead th[data-col-key]');
+	return Array.from(baseHeaders).find((el) => el.dataset.colKey === column) ?? null;
+};
+
+const getScrollContainers = (anchor: HTMLElement): HTMLElement[] => {
+	const containers: HTMLElement[] = [];
+	let node: HTMLElement | null = anchor.parentElement;
+
+	while (node) {
+		const style = window.getComputedStyle(node);
+		const overflowValue = `${style.overflow}${style.overflowX}${style.overflowY}`;
+		if (/(auto|scroll|overlay)/.test(overflowValue)) {
+			containers.push(node);
+		}
+		node = node.parentElement;
+	}
+
+	return containers;
+};
 
 export function useTableFilterPopover(sourceData: Record<string, unknown>[]): UseTableFilterPopoverResult {
 	const [activeCol, setActiveCol] = useState<string | null>(null);
@@ -69,17 +95,30 @@ export function useTableFilterPopover(sourceData: Record<string, unknown>[]): Us
 
 		let rafId = 0;
 		let settleTimer = 0;
+		let currentAnchor = anchorEl;
+		const scrollContainers = new Set<HTMLElement>([...getScrollContainers(anchorEl)]);
+		const tableScrollEl = document.querySelector<HTMLElement>('.table_scroll_x');
+		if (tableScrollEl) {
+			scrollContainers.add(tableScrollEl);
+		}
+
 		const updateAnchorRect = () => {
 			if (rafId) return;
 			rafId = window.requestAnimationFrame(() => {
 				rafId = 0;
-				if (!document.body.contains(anchorEl)) {
+				const resolvedAnchor = findHeaderCell(activeCol) ?? currentAnchor;
+				if (!resolvedAnchor || !document.body.contains(resolvedAnchor)) {
 					setActiveCol(null);
 					setAnchorEl(null);
 					setAnchorRect(null);
 					return;
 				}
-				setAnchorRect(anchorEl.getBoundingClientRect());
+
+				currentAnchor = resolvedAnchor;
+				if (resolvedAnchor !== anchorEl) {
+					setAnchorEl(resolvedAnchor);
+				}
+				setAnchorRect(cloneRect(resolvedAnchor.getBoundingClientRect()));
 			});
 		};
 
@@ -101,6 +140,7 @@ export function useTableFilterPopover(sourceData: Record<string, unknown>[]): Us
 		updateAnchorRect();
 		window.addEventListener('scroll', handleViewportChange, { passive: true, capture: true });
 		window.addEventListener('resize', handleViewportChange, { passive: true });
+		scrollContainers.forEach((container) => container.addEventListener('scroll', handleViewportChange, { passive: true }));
 		headerEl?.addEventListener('transitionend', handleViewportChange);
 
 		return () => {
@@ -112,6 +152,7 @@ export function useTableFilterPopover(sourceData: Record<string, unknown>[]): Us
 			}
 			window.removeEventListener('scroll', handleViewportChange, true);
 			window.removeEventListener('resize', handleViewportChange);
+			scrollContainers.forEach((container) => container.removeEventListener('scroll', handleViewportChange));
 			headerEl?.removeEventListener('transitionend', handleViewportChange);
 		};
 	}, [anchorEl, activeCol]);
@@ -125,7 +166,7 @@ export function useTableFilterPopover(sourceData: Record<string, unknown>[]): Us
 	const openFilter = useCallback((column: string, target: HTMLElement) => {
 		setActiveCol(column);
 		setAnchorEl(target);
-		setAnchorRect(target.getBoundingClientRect());
+		setAnchorRect(cloneRect(target.getBoundingClientRect()));
 	}, []);
 
 	const toggleActiveValue = useCallback(

@@ -37,6 +37,7 @@ export default function DashboardTable({ visibleColumns, rows, fixedHeader, tabl
 								{visibleColumns.map((column) => (
 									<th
 										key={column}
+										data-col-key={column}
 										onClick={(e) => onHeaderClick(column, e.currentTarget as HTMLElement)}
 										style={{ cursor: 'pointer' }}
 									>
@@ -82,6 +83,7 @@ export default function DashboardTable({ visibleColumns, rows, fixedHeader, tabl
 									return (
 										<th
 											key={`overlay_${column}`}
+											data-col-key={column}
 											onClick={(e) => onHeaderClick(column, e.currentTarget as HTMLElement)}
 											style={{
 												cursor: 'pointer',
