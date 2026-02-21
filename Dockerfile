@@ -24,10 +24,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 # 파이썬 패키지 설치
-# 참고: 현재 requirements.txt에 scikit-learn이 없어 별도 설치
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir scikit-learn
+RUN pip install --no-cache-dir -r requirements.txt
 # 백엔드 실행에 필요한 코드/데이터 복사
 COPY backend ./backend
 COPY data ./data
