@@ -11,7 +11,7 @@ export function buildApiUrl(path: string): string {
 }
 
 export const DUMMY_CSV_URL =
-  rawDummyCsvUrl || buildApiUrl('/sample/dummy-midterm-like-labeled')
+  rawDummyCsvUrl || buildApiUrl('/api/sample/dummy-midterm-like-labeled')
 
 interface PredictCsvParams {
   file: File
@@ -28,7 +28,7 @@ export async function predictCsv({
   formData.append('file', file)
   formData.append('policy', JSON.stringify(policyObj))
 
-  const url = buildApiUrl(`/predict?mode=${encodeURIComponent(mode)}`)
+  const url = buildApiUrl(`/api/predict?mode=${encodeURIComponent(mode)}`)
 
   const res = await fetch(url, {
     method: 'POST',

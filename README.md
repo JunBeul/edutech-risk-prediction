@@ -16,7 +16,7 @@
 
 ## 2. 프로젝트가 제공하는 것
 
-- CSV 업로드 기반 위험 예측 (`POST /predict`)
+- CSV 업로드 기반 위험 예측 (`POST /api/predict`)
 - 학교/학급별 평가 정책 동적 설정
   - 성취 기준 임계치
   - 평가 항목 만점 및 반영 비율
@@ -30,7 +30,7 @@
   - 스티키 테이블 헤더
   - 행 상세 드로어
   - 모바일 플로팅 내비게이션
-- CSV 리포트 저장 및 다운로드 엔드포인트 제공 (`GET /download/{filename}`)
+- CSV 리포트 저장 및 다운로드 엔드포인트 제공 (`GET /api/download/{filename}`)
 
 ## 3. 기술 스택
 
@@ -118,10 +118,11 @@ Logistic Regression은 위험군 분류 결과를 단순 0/1이 아닌 확률값
 
 ## 7. API 요약
 
-- `GET /` - API 루트
-- `GET /health` - 헬스 체크
-- `POST /predict` - multipart 업로드 (`file`, `policy`) + query `mode=full|compact`
-- `GET /download/{filename}` - 저장된 리포트 CSV 다운로드
+- `GET /` - 프론트엔드 정적 앱 엔트리(빌드 미존재 시 API 메시지 반환)
+- `GET /api/health` - 헬스 체크
+- `POST /api/predict` - multipart 업로드 (`file`, `policy`) + query `mode=full|compact`
+- `GET /api/download/{filename}` - 저장된 리포트 CSV 다운로드
+- `GET /api/sample/dummy-midterm-like-labeled` - 예시 더미 CSV 다운로드
 
 ## 8. 로컬 실행
 
