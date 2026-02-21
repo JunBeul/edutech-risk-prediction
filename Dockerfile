@@ -3,6 +3,11 @@
 # 1) 프론트엔드 빌드 스테이지 (Vite -> dist)
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/client
+# Docker 빌드에서는 API를 same-origin(/api)으로 붙이기 위해
+# 기본값을 빈 문자열로 둡니다. (client/.env.local 값보다 우선)
+ARG VITE_API_BASE_URL=
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+
 # 의존성 캐시를 위해 package 파일 먼저 복사
 COPY client/package.json client/package-lock.json ./
 RUN npm ci

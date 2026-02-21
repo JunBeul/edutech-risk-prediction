@@ -21,6 +21,7 @@ function toNumber(v: string): number {
 export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 	const navigate = useNavigate();
 	const [file, setFile] = useState<File | null>(null);
+	const [submitError, setSubmitError] = useState<string | null>(null);
 
 	useEscapeClose(onClose);
 
@@ -84,14 +85,23 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 	const onSubmit = async () => {
 		if (!canSubmit || !policy || !file) return;
 
-		const result = await predictCsv({
-			file,
-			policyObj: policy,
-			mode: 'full'
-		});
+		setSubmitError(null);
+		try {
+			const result = await predictCsv({
+				file,
+				policyObj: policy,
+				mode: 'full'
+			});
 
-		onClose();
-		navigate(onSuccessNavigateTo, { state: { result } });
+			onClose();
+			navigate(onSuccessNavigateTo, { state: { result } });
+		} catch (err) {
+			if (err instanceof Error && err.message) {
+				setSubmitError(err.message);
+				return;
+			}
+			setSubmitError('업로드 처리 중 오류가 발생했습니다.');
+		}
 	};
 
 	const setField = (key: keyof typeof form, value: string) => {
@@ -155,6 +165,12 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 								<li key={i}>{e}</li>
 							))}
 						</ul>
+					</div>
+				)}
+				{submitError && (
+					<div className='modal_errors'>
+						<div className='modal_errors_title'>업로드 오류</div>
+						<div style={{ margin: 8, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{submitError}</div>
 					</div>
 				)}
 				<div className='modal_footer'>
