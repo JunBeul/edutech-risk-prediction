@@ -1,4 +1,4 @@
-import os
+﻿import os
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -19,9 +19,12 @@ from backend.src.report_logic import (
     safe_json_df,
 )
 
+# 서버가 어떤 위치에서 실행되더라도, 환경변수의 상대경로를
+# 프로젝트 루트 기준으로 일관되게 해석하기 위해 사용합니다.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 def _resolve_path(env_key: str, default_relative: str) -> Path:
+    # 환경변수에서 경로를 읽고, 없으면 프로젝트 상대 기본 경로를 사용합니다.
     raw = os.getenv(env_key, default_relative).strip()
     path = Path(raw)
     if not path.is_absolute():
@@ -29,6 +32,7 @@ def _resolve_path(env_key: str, default_relative: str) -> Path:
     return path
 
 def _load_allowed_origins() -> list[str]:
+    # CORS 허용 Origin은 쉼표로 구분한 환경변수 값으로 받을 수 있습니다.
     env_origins = os.getenv("ALLOWED_ORIGINS", "").strip()
     if env_origins:
         return [origin.strip() for origin in env_origins.split(",") if origin.strip()]
@@ -47,6 +51,7 @@ REPORT_DIR_RESOLVED = REPORT_DIR.resolve()
 FRONTEND_DIST_RESOLVED = FRONTEND_DIST.resolve()
 FRONTEND_INDEX_PATH = FRONTEND_DIST / "index.html"
 
+# --- 앱 초기화: FastAPI 생성 및 CORS 미들웨어 등록 ---
 app = FastAPI(title=APP_TITLE)
 app.add_middleware(
     CORSMiddleware,
@@ -58,16 +63,19 @@ app.add_middleware(
 
 @app.get("/")
 def root():
+    # React 빌드 산출물이 있으면 앱을 서빙하고, 없으면 간단한 API 메시지를 반환합니다.
     if FRONTEND_INDEX_PATH.exists():
         return FileResponse(FRONTEND_INDEX_PATH)
     return {"message": APP_TITLE}
 
 @app.get("/api/health")
 def health():
+    # 서버 상태 확인용 경량 헬스체크 엔드포인트입니다.
     return {"status": "ok"}
 
 @app.get("/api/sample/dummy-midterm-like-labeled")
 def download_dummy_csv():
+    # 업로드 스키마에 맞는 예시 CSV 파일을 제공합니다.
     if not DUMMY_DATA_PATH.exists():
         raise HTTPException(status_code=404, detail="Dummy CSV file not found.")
     return FileResponse(
@@ -82,6 +90,12 @@ async def predict(
     policy: str = Form(...),
     mode: str = "full",
 ):
+    # 예측 처리 메인 흐름:
+    # 1) CSV 검증 및 로드
+    # 2) 입력 전처리
+    # 3) 학습된 모델 로드 후 확률 예측
+    # 4) 가이드/리포트 컬럼 확장
+    # 5) 리포트 CSV 저장 후 JSON 응답 반환
     try:
         if file.content_type != "text/csv":
             raise HTTPException(status_code=400, detail="Only CSV files are supported.")
@@ -103,6 +117,7 @@ async def predict(
         df_result["action"] = df_result["risk_level"].apply(assign_action)
         df_result = enrich_report(df_result, policy_obj)
 
+        # "compact" 모드는 UI에서 바로 활용할 핵심 컬럼만 반환합니다.
         if mode == "compact":
             compact_cols = [
                 "student_id",
@@ -140,6 +155,7 @@ async def predict(
 
 @app.get("/api/download/{filename}")
 def download_report(filename: str):
+    # REPORT_DIR 내부 파일만 다운로드하도록 제한합니다(경로 이탈 방지).
     path = (REPORT_DIR / filename).resolve()
     if not path.exists() or path.parent != REPORT_DIR_RESOLVED:
         raise HTTPException(status_code=404, detail="Report file not found.")
@@ -151,6 +167,10 @@ def download_report(filename: str):
 
 @app.get("/{full_path:path}", include_in_schema=False)
 def serve_frontend(full_path: str):
+    # SPA/정적 파일 서빙 규칙:
+    # - 요청 경로에 해당하는 정적 파일이 있으면 그 파일 반환
+    # - 정적 파일이 아니면 index.html 반환(클라이언트 라우팅)
+    # - /api 경로는 절대 프론트 fallback으로 삼키지 않음
     if not FRONTEND_INDEX_PATH.exists():
         raise HTTPException(status_code=404, detail="Frontend build not found.")
 
