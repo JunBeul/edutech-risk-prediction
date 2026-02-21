@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import UploadModal from '../components/upload/UploadModal';
 import { DUMMY_CSV_URL } from '../shared/api';
+import simbolIcon from '../assets/simbol.svg';
 import '../styles/landing.scss';
 
 export default function LandingPage() {
@@ -28,7 +29,10 @@ export default function LandingPage() {
 	return (
 		<div className='landing_page'>
 			<section className='landing_hero'>
-				<h1>최성보 신호등</h1>
+				<div className='landing_hero_title'>
+					<img className='landing_hero_symbol' src={simbolIcon} alt='' aria-hidden='true' />
+					<h1>최성보 신호등</h1>
+				</div>
 				<h2>최소학력보장 지원 위험 예측 AI</h2>
 				<p>
 					학기 중간 시점의 학습/행동 데이터를 바탕으로

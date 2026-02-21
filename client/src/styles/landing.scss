@@ -16,6 +16,18 @@
 	display: grid;
 	gap: 12px;
 
+	.landing_hero_title {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.landing_hero_symbol {
+		width: 36px;
+		height: 36px;
+		display: block;
+	}
+
 	h1 {
 		font-size: 2rem;
 		color: #1f2937;
@@ -101,6 +113,11 @@
 
 	.landing_hero {
 		padding: 20px 16px;
+
+		.landing_hero_symbol {
+			width: 32px;
+			height: 32px;
+		}
 
 		h1 {
 			font-size: 1.5rem;
