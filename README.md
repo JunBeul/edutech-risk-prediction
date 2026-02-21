@@ -7,10 +7,11 @@
 데이터 기반으로 경감하는 것을 목표로 합니다.
 
 - 배포 서비스: https://maplight.onrender.com
+- render의 무료 플랜을 통해 배포되어 첫 시작에 오랜 시간이 소요(cold-start)됩니다.
 
 ---
 
-- 개발/운영 관점 상세는 `README_DEV.md`를 참고해주세요.
+- 개발/운영 관점 상세는 [`README_DEV.md`](https://github.com/JunBeul/edutech-risk-prediction/blob/main/README_DEV.md)를 참고해주세요.
 
 ---
 
@@ -287,6 +288,6 @@ edutech-risk-prediction/
 - 실험 노트북 -> 서비스 코드로 전환한 제품화 경험
 - 모델 선택/평가 기준을 교육 개입 목적과 연결해 설명 가능
 - 예측 결과를 교사 행동 전략까지 확장한 리포트 자동화
-- 데이터/모델/API/UI/배포 전 과정을 단독으로 구현
+- 데이터/모델/API/UI/배포 전 과정을 경험
 
 ---

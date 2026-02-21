@@ -3,13 +3,17 @@
 개발자/협업자 관점에서 프로젝트를 빠르게 이해하고 재현하기 위한 문서입니다.
 
 - 서비스 URL: https://maplight.onrender.com
-- 루트 README: `README.md` (포트폴리오 중심 설명)
+- 루트 README: [`README.md`](https://github.com/JunBeul/edutech-risk-prediction?tab=readme-ov-file)
+
+---
 
 ## 1. 개발 목표
 
 - 중간 시점 데이터로 위험군 예측
 - 예측 점수뿐 아니라 교사 개입 가능한 설명 컬럼 생성
 - 단일 저장소에서 API + UI + 배포까지 재현 가능하게 구성
+
+---
 
 ## 2. 실행 환경
 
@@ -44,6 +48,7 @@ npm install
 npm --prefix client install
 ```
 
+---
 
 ## 3. 환경변수
 
@@ -97,6 +102,8 @@ Windows PowerShell:
 Copy-Item client/.env.example client/.env
 ```
 
+---
+
 ## 4. 로컬 실행
 
 ### 0) 모델 파일 확인 (클린 클론 중요)
@@ -128,6 +135,8 @@ npm run dev:front
 - 헬스체크: `GET http://127.0.0.1:8000/api/health`
 - 샘플 CSV 다운로드: `GET http://127.0.0.1:8000/api/sample/dummy-midterm-like-labeled`
 
+---
+
 ## 5. 데이터 계약(업로드 스키마)
 
 필수 컬럼:
@@ -144,6 +153,8 @@ npm run dev:front
 - `behavior_score`
 
 중간 시점 데이터에서 일부 점수(`final_score`) 결측/all-NaN이 발생하는 케이스를 전제로 설계되어 있습니다.
+
+---
 
 ## 6. 전처리 파이프라인 요약
 
@@ -162,6 +173,8 @@ npm run dev:front
 라벨 규칙(기본):
 
 - `at_risk = (achievement_rate < 40) OR (absence_count >= ceil(total_sessions * 1/3))`
+
+---
 
 ## 7. 모델 학습/추론
 
@@ -187,6 +200,7 @@ python backend/scripts/generate_prediction_report.py
 ```
 
 출력:
+
 - `reports/tables/prediction_report_YYYYMMDD.csv`
 
 ### 스모크 테스트
@@ -198,9 +212,12 @@ python backend/scripts/smoke_test_preprocessing.py
 ```
 
 검증 항목:
+
 - all-NaN 컬럼 보정 동작
 - missing flag 생성 동작
 - 라벨 분포 유효성
+
+---
 
 ## 8. API 스펙 요약
 
@@ -220,14 +237,14 @@ python backend/scripts/smoke_test_preprocessing.py
 
 ```json
 {
-  "threshold": 0.4,
-  "midterm_max": 100,
-  "midterm_weight": 40,
-  "final_max": 100,
-  "final_weight": 40,
-  "performance_max": 100,
-  "performance_weight": 20,
-  "total_classes": 160
+	"threshold": 0.4,
+	"midterm_max": 100,
+	"midterm_weight": 40,
+	"final_max": 100,
+	"final_weight": 40,
+	"performance_max": 100,
+	"performance_weight": 20,
+	"total_classes": 160
 }
 ```
 
@@ -242,6 +259,8 @@ python backend/scripts/smoke_test_preprocessing.py
 - 점수 가이드(`score_guidance`)
 - 주요 사유(`top_reasons`)
 
+---
+
 ## 9. 프론트 구조 요약
 
 - 페이지
@@ -253,6 +272,8 @@ python backend/scripts/smoke_test_preprocessing.py
   - 테이블/필터/컬럼 선택/상세 드로어/모바일 플로팅 네비게이션
 - API 유틸
   - `client/src/shared/api.ts` (`buildApiUrl`, `predictCsv`)
+
+---
 
 ## 10. Docker/배포
 
@@ -271,6 +292,8 @@ docker build -t edutech-risk-prediction:local .
 docker run --rm -d -p 8000:8000 --name edutech-app edutech-risk-prediction:local
 ```
 
+---
+
 ## 11. 주요 이슈/회고 문서
 
 `docs/` 참고:
@@ -288,6 +311,8 @@ docker run --rm -d -p 8000:8000 --name edutech-app edutech-risk-prediction:local
 - 학습/추론 피처 계약을 명시적으로 고정
 - 전처리 변경 시 스모크 테스트로 회귀를 빠르게 확인
 - 배포 환경의 API base URL 하드코딩 리스크를 사전에 차단
+
+---
 
 ## 12. 디렉터리
 
