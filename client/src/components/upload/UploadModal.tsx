@@ -1,6 +1,5 @@
-﻿import { useMemo, useState } from 'react';
+import { type SubmitEvent, useId, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useId, useRef } from 'react';
 import { predictCsv } from '../../shared/api';
 import type { EvaluationPolicy } from '../../shared/types';
 import { useEscapeClose } from '../../hooks/useEscapeClose';
@@ -15,10 +14,105 @@ type Props = {
 	onSuccessNavigateTo: string;
 };
 
+type UploadFormState = {
+	threshold: string;
+	midterm_max: string;
+	midterm_weight: string;
+	final_max: string;
+	final_weight: string;
+	performance_max: string;
+	performance_weight: string;
+	total_classes: string;
+};
+
+type UploadFormKey = keyof UploadFormState;
+type UploadFieldErrors = Record<UploadFormKey, boolean>;
+
+type UploadValidationResult = {
+	errors: string[];
+	fieldErrors: UploadFieldErrors;
+};
+
+const INITIAL_FORM: UploadFormState = {
+	threshold: '0.4',
+	midterm_max: '100',
+	midterm_weight: '40',
+	final_max: '100',
+	final_weight: '40',
+	performance_max: '100',
+	performance_weight: '20',
+	total_classes: '160'
+};
+
 function toNumber(v: string): number {
-	// 빈 문자열/공백은 NaN 처리
-	const n = Number(v);
-	return n;
+	// 빈 문자열/공백은 Number 변환 결과에 맡기고, 검증 단계에서 에러 처리합니다.
+	return Number(v);
+}
+
+function createEmptyFieldErrors(): UploadFieldErrors {
+	return {
+		threshold: false,
+		midterm_max: false,
+		midterm_weight: false,
+		final_max: false,
+		final_weight: false,
+		performance_max: false,
+		performance_weight: false,
+		total_classes: false
+	};
+}
+
+function validateUploadForm(form: UploadFormState, policy: EvaluationPolicy | null): UploadValidationResult {
+	const fieldErrors = createEmptyFieldErrors();
+	const errors: string[] = [];
+
+	if (!policy) {
+		(Object.keys(form) as UploadFormKey[]).forEach((key) => {
+			if (Number.isNaN(toNumber(form[key]))) {
+				fieldErrors[key] = true;
+			}
+		});
+		errors.push('입력값을 숫자로 채우십시오.');
+		return { errors, fieldErrors };
+	}
+
+	if (policy.threshold <= 0 || policy.threshold >= 1) {
+		fieldErrors.threshold = true;
+		errors.push('threshold는 0~1 사이(예: 0.4)여야 합니다.');
+	}
+	if (policy.midterm_max <= 0) {
+		fieldErrors.midterm_max = true;
+		errors.push('중간고사 만점은 1 이상이어야 합니다.');
+	}
+	if (policy.final_max <= 0) {
+		fieldErrors.final_max = true;
+		errors.push('기말고사 만점은 1 이상이어야 합니다.');
+	}
+	if (policy.performance_max <= 0) {
+		fieldErrors.performance_max = true;
+		errors.push('수행평가 만점은 1 이상이어야 합니다.');
+	}
+	if (policy.total_classes <= 0) {
+		fieldErrors.total_classes = true;
+		errors.push('총 수업 횟수는 1 이상이어야 합니다.');
+	}
+
+	const wSum = policy.midterm_weight + policy.final_weight + policy.performance_weight;
+	if (wSum !== 100) {
+		fieldErrors.midterm_weight = true;
+		fieldErrors.final_weight = true;
+		fieldErrors.performance_weight = true;
+		errors.push(`반영비율 합이 100이어야 합니다. (현재: ${wSum})`);
+	}
+
+	if (policy.midterm_weight < 0 || policy.final_weight < 0 || policy.performance_weight < 0) {
+		if (policy.midterm_weight < 0) fieldErrors.midterm_weight = true;
+		if (policy.final_weight < 0) fieldErrors.final_weight = true;
+		if (policy.performance_weight < 0) fieldErrors.performance_weight = true;
+		errors.push('반영비율은 음수가 될 수 없습니다.');
+	}
+
+	return { errors, fieldErrors };
 }
 
 export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
@@ -36,23 +130,13 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 	};
 
 	useEscapeClose(handleClose);
-
 	useModalFocusManager({
 		containerRef: modalRef,
 		initialFocusRef: fileInputRef
 	});
 
 	// 입력은 string으로 들고 있다가, 제출 시 number 변환(HTML input 특성 대응)
-	const [form, setForm] = useState({
-		threshold: '0.4',
-		midterm_max: '100',
-		midterm_weight: '40',
-		final_max: '100',
-		final_weight: '40',
-		performance_max: '100',
-		performance_weight: '20',
-		total_classes: '160'
-	});
+	const [form, setForm] = useState<UploadFormState>(INITIAL_FORM);
 
 	const policy: EvaluationPolicy | null = useMemo(() => {
 		const p: EvaluationPolicy = {
@@ -66,54 +150,30 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 			total_classes: toNumber(form.total_classes)
 		};
 
-		// 숫자 파싱 실패(NaN) 체크
 		const values = Object.values(p);
 		if (values.some((x) => Number.isNaN(x))) return null;
 
 		return p;
 	}, [form]);
 
-	const errors = useMemo(() => {
-		const errs: string[] = [];
-		if (!policy) {
-			errs.push('입력값을 숫자로 채우십시오.');
-			return errs;
-		}
+	const { errors, fieldErrors } = useMemo(() => validateUploadForm(form, policy), [form, policy]);
 
-		// 범위/제약
-		if (policy.threshold <= 0 || policy.threshold >= 1) errs.push('threshold는 0~1 사이(예: 0.4)여야 합니다.');
-		if (policy.midterm_max <= 0) errs.push('중간고사 만점은 1 이상이어야 합니다.');
-		if (policy.final_max <= 0) errs.push('기말고사 만점은 1 이상이어야 합니다.');
-		if (policy.performance_max <= 0) errs.push('수행평가 만점은 1 이상이어야 합니다.');
-		if (policy.total_classes <= 0) errs.push('총 수업 횟수는 1 이상이어야 합니다.');
+	const canSubmit = !!file && !!policy && errors.length === 0 && !isSubmitting;
 
-		// 반영비율 합 체크
-		const wSum = policy.midterm_weight + policy.final_weight + policy.performance_weight;
-		if (wSum !== 100) errs.push(`반영비율 합이 100이어야 합니다. (현재: ${wSum})`);
+	const onSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
+		event.preventDefault();
 
-		// 음수 금지
-		if (policy.midterm_weight < 0 || policy.final_weight < 0 || policy.performance_weight < 0) errs.push('반영비율은 음수가 될 수 없습니다.');
-
-		return errs;
-	}, [policy]);
-
-	const canSubmit = file && policy && errors.length === 0 && !isSubmitting;
-
-	const onSubmit = async () => {
 		if (!canSubmit || !policy || !file) return;
 
 		setSubmitError(null);
 		setIsSubmitting(true);
 		try {
-			// 프론트 -> shared/api.ts -> 백엔드 /api/predict 로 multipart 요청 전송
-			// 반환값에는 data(행 목록), report_url(다운로드 경로) 등이 포함됩니다.
 			const result = await predictCsv({
 				file,
 				policyObj: policy,
 				mode: 'full'
 			});
 
-			// 결과를 전역 저장소 대신 라우터 state로 넘겨 대시보드에서 바로 사용합니다.
 			onClose();
 			navigate(onSuccessNavigateTo, { state: { result } });
 		} catch (err) {
@@ -126,9 +186,12 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 		}
 	};
 
-	const setField = (key: keyof typeof form, value: string) => {
+	const setField = (key: UploadFormKey, value: string) => {
 		setForm((prev) => ({ ...prev, [key]: value }));
 	};
+
+	const getFieldInputClassName = (key: UploadFormKey) => `modal_text_input${fieldErrors[key] ? ' is-error' : ''}`;
+	const getFieldAriaInvalid = (key: UploadFormKey) => (fieldErrors[key] ? true : undefined);
 
 	return (
 		<div className='modal_wapper' onClick={handleClose}>
@@ -143,73 +206,135 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 				tabIndex={-1}
 			>
 				<OverlayHeader title='파일 업로드' titleId={titleId} onClose={handleClose} className='modal_header' />
-				<div className='modal_body'>
-					{/* CSV 파일 + 평가 정책(임계값/반영비율 등)을 함께 입력받아 예측 요청에 사용 */}
-					<input ref={fileInputRef} className='modal_file_input' type='file' accept='.csv' disabled={isSubmitting} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
 
-					<div className='modal_grid_item'>
-						<label>
-							<span className='title'>최성보 비율</span>
-							<input className='modal_text_input' value={form.threshold} disabled={isSubmitting} onChange={(e) => setField('threshold', e.target.value)} />
-						</label>
+				<form onSubmit={onSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+					<div className='modal_body'>
+						<input ref={fileInputRef} className='modal_file_input' type='file' accept='.csv' disabled={isSubmitting} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
 
-						<label>
-							<span className='title'>총 수업 횟수</span>
-							<input className='modal_text_input' value={form.total_classes} disabled={isSubmitting} onChange={(e) => setField('total_classes', e.target.value)} />
-						</label>
+						<div className='modal_grid_item'>
+							<label>
+								<span className='title'>최성보 비율</span>
+								<input
+									className={getFieldInputClassName('threshold')}
+									aria-invalid={getFieldAriaInvalid('threshold')}
+									value={form.threshold}
+									disabled={isSubmitting}
+									onChange={(e) => setField('threshold', e.target.value)}
+									inputMode='decimal'
+								/>
+							</label>
 
-						<label>
-							<span className='title'>중간 만점</span>
-							<input className='modal_text_input' value={form.midterm_max} disabled={isSubmitting} onChange={(e) => setField('midterm_max', e.target.value)} />
-						</label>
+							<label>
+								<span className='title'>총 수업 횟수</span>
+								<input
+									className={getFieldInputClassName('total_classes')}
+									aria-invalid={getFieldAriaInvalid('total_classes')}
+									value={form.total_classes}
+									disabled={isSubmitting}
+									onChange={(e) => setField('total_classes', e.target.value)}
+									inputMode='numeric'
+								/>
+							</label>
 
-						<label>
-							<span className='title'>중간 반영(%)</span>
-							<input className='modal_text_input' value={form.midterm_weight} disabled={isSubmitting} onChange={(e) => setField('midterm_weight', e.target.value)} />
-						</label>
+							<label>
+								<span className='title'>중간 만점</span>
+								<input
+									className={getFieldInputClassName('midterm_max')}
+									aria-invalid={getFieldAriaInvalid('midterm_max')}
+									value={form.midterm_max}
+									disabled={isSubmitting}
+									onChange={(e) => setField('midterm_max', e.target.value)}
+									inputMode='numeric'
+								/>
+							</label>
 
-						<label>
-							<span className='title'>기말 만점</span>
-							<input className='modal_text_input' value={form.final_max} disabled={isSubmitting} onChange={(e) => setField('final_max', e.target.value)} />
-						</label>
+							<label>
+								<span className='title'>중간 반영(%)</span>
+								<input
+									className={getFieldInputClassName('midterm_weight')}
+									aria-invalid={getFieldAriaInvalid('midterm_weight')}
+									value={form.midterm_weight}
+									disabled={isSubmitting}
+									onChange={(e) => setField('midterm_weight', e.target.value)}
+									inputMode='numeric'
+								/>
+							</label>
 
-						<label>
-							<span className='title'>기말 반영(%)</span>
-							<input className='modal_text_input' value={form.final_weight} disabled={isSubmitting} onChange={(e) => setField('final_weight', e.target.value)} />
-						</label>
+							<label>
+								<span className='title'>기말 만점</span>
+								<input
+									className={getFieldInputClassName('final_max')}
+									aria-invalid={getFieldAriaInvalid('final_max')}
+									value={form.final_max}
+									disabled={isSubmitting}
+									onChange={(e) => setField('final_max', e.target.value)}
+									inputMode='numeric'
+								/>
+							</label>
 
-						<label>
-							<span className='title'>수행 만점</span>
-							<input className='modal_text_input' value={form.performance_max} disabled={isSubmitting} onChange={(e) => setField('performance_max', e.target.value)} />
-						</label>
+							<label>
+								<span className='title'>기말 반영(%)</span>
+								<input
+									className={getFieldInputClassName('final_weight')}
+									aria-invalid={getFieldAriaInvalid('final_weight')}
+									value={form.final_weight}
+									disabled={isSubmitting}
+									onChange={(e) => setField('final_weight', e.target.value)}
+									inputMode='numeric'
+								/>
+							</label>
 
-						<label>
-							<span className='title'>수행 반영(%)</span>
-							<input className='modal_text_input' value={form.performance_weight} disabled={isSubmitting} onChange={(e) => setField('performance_weight', e.target.value)} />
-						</label>
+							<label>
+								<span className='title'>수행 만점</span>
+								<input
+									className={getFieldInputClassName('performance_max')}
+									aria-invalid={getFieldAriaInvalid('performance_max')}
+									value={form.performance_max}
+									disabled={isSubmitting}
+									onChange={(e) => setField('performance_max', e.target.value)}
+									inputMode='numeric'
+								/>
+							</label>
+
+							<label>
+								<span className='title'>수행 반영(%)</span>
+								<input
+									className={getFieldInputClassName('performance_weight')}
+									aria-invalid={getFieldAriaInvalid('performance_weight')}
+									value={form.performance_weight}
+									disabled={isSubmitting}
+									onChange={(e) => setField('performance_weight', e.target.value)}
+									inputMode='numeric'
+								/>
+							</label>
+						</div>
 					</div>
-				</div>
-				{errors.length > 0 && (
-					<div className='modal_errors'>
-						<div className='modal_errors_title'>입력 오류</div>
-						<ul style={{ margin: 8 }}>
-							{errors.map((e, i) => (
-								<li key={i}>{e}</li>
-							))}
-						</ul>
+
+					{errors.length > 0 && (
+						<div className='modal_errors'>
+							<div className='modal_errors_title'>입력 오류</div>
+							<ul style={{ margin: 8 }}>
+								{errors.map((e, i) => (
+									<li key={i}>{e}</li>
+								))}
+							</ul>
+						</div>
+					)}
+
+					{submitError && (
+						<div className='modal_errors'>
+							<div className='modal_errors_title'>업로드 오류</div>
+							<div style={{ margin: 8, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{submitError}</div>
+						</div>
+					)}
+
+					<div className='modal_footer'>
+						<button type='submit' disabled={!canSubmit}>
+							{isSubmitting ? '처리 중...' : '업로드'}
+						</button>
 					</div>
-				)}
-				{submitError && (
-					<div className='modal_errors'>
-						<div className='modal_errors_title'>업로드 오류</div>
-						<div style={{ margin: 8, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{submitError}</div>
-					</div>
-				)}
-				<div className='modal_footer'>
-					<button onClick={onSubmit} disabled={!canSubmit}>
-						{isSubmitting ? '처리 중...' : '업로드'}
-					</button>
-				</div>
+				</form>
+
 				{isSubmitting && <LoadingOverlay message='예측 결과를 생성하는 중입니다...' ariaLabel='업로드 처리 중' />}
 			</div>
 		</div>
