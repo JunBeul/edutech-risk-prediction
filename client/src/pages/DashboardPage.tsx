@@ -64,7 +64,7 @@ export default function DashboardPage() {
 	const visibleColumns = columnState.reportKey === reportKey ? columnState.cols : defaultCols;
 	// 고정 헤더 훅 의존성 비교를 단순화하기 위해 문자열 키로 변환
 	const visibleColumnsKey = useMemo(() => visibleColumns.join('|'), [visibleColumns]);
-	const isScrollLockOpen = UploadModalOpen || colModalOpen;
+	const isScrollLockOpen = UploadModalOpen || colModalOpen || !!selectedRow;
 	// 스크롤 시 헤더를 fixed 오버레이로 동기화하는 훅
 	const { fixedHeader, tableScrollRef, tableRef, overlayTableRef } = useFixedTableHeader(visibleColumnsKey, filteredRows.length);
 

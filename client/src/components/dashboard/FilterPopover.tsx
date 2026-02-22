@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
+import { useId, useMemo, useRef } from 'react';
 import { labelOf } from '../../shared/columnLabels';
-import '../../styles/filterPopover.scss';
 import { useEscapeClose } from '../../hooks/useEscapeClose';
+import { useModalFocusManager } from '../../hooks/useModalFocusManager';
+
+import '../../styles/filterPopover.scss';
 
 type SortDir = 'asc' | 'desc';
 const POPOVER_WIDTH = 260;
@@ -19,7 +21,13 @@ type Props = {
 };
 
 export default function FilterPopover({ colKey, anchorRect, values, hiddenValues, onToggleValue, onSort, onHideColumn, onClose }: Props) {
+	const titleId = useId();
+	const popoverRef = useRef<HTMLDivElement | null>(null);
+
 	useEscapeClose(onClose);
+	useModalFocusManager({
+		containerRef: popoverRef
+	});
 
 	const style = useMemo(() => {
 		const top = anchorRect.bottom + window.scrollY + 6;
@@ -38,9 +46,9 @@ export default function FilterPopover({ colKey, anchorRect, values, hiddenValues
 	}, [anchorRect]);
 
 	return (
-		<div className='filter_wapper' style={style}>
+		<div ref={popoverRef} className='filter_wapper' style={style} role='dialog' aria-labelledby={titleId} tabIndex={-1}>
 			<div className='fillter_header'>
-				<h4>{labelOf(colKey)}</h4>
+				<h4 id={titleId}>{labelOf(colKey)}</h4>
 				<button onClick={onClose}>
 					<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='currentColor'>
 						<path d='M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708' />

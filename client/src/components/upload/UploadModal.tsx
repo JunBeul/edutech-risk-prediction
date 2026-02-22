@@ -1,8 +1,10 @@
 ﻿import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useId, useRef } from 'react';
 import { predictCsv } from '../../shared/api';
 import type { EvaluationPolicy } from '../../shared/types';
 import { useEscapeClose } from '../../hooks/useEscapeClose';
+import { useModalFocusManager } from '../../hooks/useModalFocusManager';
 import OverlayHeader from '../common/OverlayHeader';
 import LoadingOverlay from '../common/LoadingOverlay';
 
@@ -21,6 +23,9 @@ function toNumber(v: string): number {
 
 export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 	const navigate = useNavigate();
+	const titleId = useId();
+	const modalRef = useRef<HTMLDivElement | null>(null);
+	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const [file, setFile] = useState<File | null>(null);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,6 +36,11 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 	};
 
 	useEscapeClose(handleClose);
+
+	useModalFocusManager({
+		containerRef: modalRef,
+		initialFocusRef: fileInputRef
+	});
 
 	// 입력은 string으로 들고 있다가, 제출 시 number 변환(HTML input 특성 대응)
 	const [form, setForm] = useState({
@@ -122,11 +132,20 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 
 	return (
 		<div className='modal_wapper' onClick={handleClose}>
-			<div className='modal_container' onClick={(e) => e.stopPropagation()}>
-				<OverlayHeader title='파일 업로드' onClose={handleClose} className='modal_header' />
+			<div
+				ref={modalRef}
+				className='modal_container'
+				onClick={(e) => e.stopPropagation()}
+				role='dialog'
+				aria-modal='true'
+				aria-labelledby={titleId}
+				aria-busy={isSubmitting || undefined}
+				tabIndex={-1}
+			>
+				<OverlayHeader title='파일 업로드' titleId={titleId} onClose={handleClose} className='modal_header' />
 				<div className='modal_body'>
 					{/* CSV 파일 + 평가 정책(임계값/반영비율 등)을 함께 입력받아 예측 요청에 사용 */}
-					<input className='modal_file_input' type='file' accept='.csv' disabled={isSubmitting} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+					<input ref={fileInputRef} className='modal_file_input' type='file' accept='.csv' disabled={isSubmitting} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
 
 					<div className='modal_grid_item'>
 						<label>
@@ -191,9 +210,7 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 						{isSubmitting ? '처리 중...' : '업로드'}
 					</button>
 				</div>
-				{isSubmitting && (
-					<LoadingOverlay message='예측 결과를 생성하는 중입니다...' ariaLabel='업로드 처리 중' />
-				)}
+				{isSubmitting && <LoadingOverlay message='예측 결과를 생성하는 중입니다...' ariaLabel='업로드 처리 중' />}
 			</div>
 		</div>
 	);
