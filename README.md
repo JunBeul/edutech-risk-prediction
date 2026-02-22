@@ -98,7 +98,80 @@
 6. React 프론트엔드 구현
 7. Docker/Render 배포
 
-> [이미지 추가 예정] 전체 프로젝트 타임라인/플로우 다이어그램
+### Architecture Overview
+
+본 서비스는 단일 Docker 컨테이너 기반의 Full-Stack ML 시스템으로 구성되어 있습니다.
+
+```mermaid
+flowchart LR
+
+  %% =======================
+  %% User Layer
+  %% =======================
+  U[Teacher User]
+
+  %% =======================
+  %% Frontend
+  %% =======================
+  FE[React Dashboard<br/>Vite + TypeScript + SCSS]
+
+  %% =======================
+  %% Backend API
+  %% =======================
+  API[FastAPI<br/>/api/predict<br/>/api/download]
+
+  %% =======================
+  %% ML Pipeline
+  %% =======================
+  PRE[Preprocessing Pipeline<br/>- validate_schema<br/>- missing flags<br/>- encoding]
+  MODEL[Logistic Regression Model<br/>predict_proba]
+  REPORT[Report Logic<br/>- risk_level<br/>- top_reasons<br/>- score_guidance<br/>- absence_limit]
+
+  %% =======================
+  %% Data
+  %% =======================
+  CSV[(Uploaded CSV)]
+  POLICY[(Evaluation Policy JSON)]
+  MODELFILE[(models/logistic_model.joblib)]
+
+  %% =======================
+  %% Flow
+  %% =======================
+  U -->|Upload CSV + Policy| FE
+  FE -->|POST /api/predict| API
+
+  API --> CSV
+  API --> POLICY
+  API --> MODELFILE
+
+  API --> PRE
+  PRE --> MODEL
+  MODEL --> REPORT
+  REPORT --> API
+
+  API -->|Prediction JSON| FE
+  FE -->|GET /api/download| API
+
+  %% =======================
+  %% Deployment Context
+  %% =======================
+  subgraph Render["Render (Single Docker Web Service)"]
+    FE
+    API
+    PRE
+    MODEL
+    REPORT
+  end
+```
+
+1. 교사는 CSV 파일과 평가 정책(JSON)을 업로드합니다.
+2. React 대시보드는 /api/predict 엔드포인트로 데이터를 전송합니다.
+3. FastAPI는 업로드된 데이터를 전처리 파이프라인에 전달합니다.
+4. 전처리 결과는 학습된 Logistic Regression 모델로 전달되어 위험 확률(risk_proba)이 계산됩니다.
+5. 예측 결과는 report_logic 모듈을 통해 교사 개입 가능한 형태의 컬럼(top_reasons, score_guidance, action 등)으로 확장됩니다.
+6. 최종 결과는 JSON으로 프론트엔드에 반환되며, 필요 시 CSV 파일로 다운로드할 수 있습니다.
+
+배포 환경에서는 React 빌드 결과(client/dist)를 FastAPI가 정적 파일로 직접 서빙하며, Render 단일 Web Service에서 API와 프론트엔드를 함께 운영합니다.
 
 ### 1단계: EDA와 전처리
 
