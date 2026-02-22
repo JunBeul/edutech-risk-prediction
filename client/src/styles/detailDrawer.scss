@@ -3,30 +3,30 @@
 
 .drawer_container {
 	z-index: 20;
-
 	position: fixed;
-	top: 1.5%;
-	right: 0;
-	height: 97%;
-	width: 45%;
-	min-width: 600px;
+	display: flex;
+	flex-direction: column;
+
 	background: $color_white;
+	border-radius: 1.2vh 0 0 1.2vh;
+	top: 2.5%;
+	right: 0%;
+	width: min(560px, 92vw);
+	height: 95%;
 	box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
-	overflow-y: auto;
-	border-radius: 12px 0 0 12px;
+	overflow: hidden;
+	padding: 20px;
 
 	.drawer_header {
 		z-index: 30;
-
-		width: 100%;
-		position: sticky;
-		top: 0;
-		background: $color_white;
-		padding: 16px;
+		margin-bottom: 12px;
 	}
 
 	.drawer_body {
-		padding: 16px;
+		flex: 1;
+		min-height: 0;
+		overflow-x: hidden;
+		overflow-y: auto;
 
 		.drawer_row {
 			display: flex;
@@ -57,13 +57,23 @@
 }
 
 @media (max-width: $mobile) {
+	.drawer_wapper {
+		z-index: 10;
+
+		position: fixed;
+		inset: 0;
+		background: color.change($color_black, $alpha: 0.2);
+		backdrop-filter: blur(6px);
+		-webkit-backdrop-filter: blur(6px);
+	}
 	.drawer_container {
-		width: calc(100vw - 12px);
+		width: min(560px, 92vw);
 		min-width: 0;
-		height: calc(100vh - 12px);
+		max-height: 85vh;
 		top: 50%;
 		left: 50%;
 		right: auto;
 		transform: translate(-50%, -50%);
+		border-radius: 1.2vh;
 	}
 }

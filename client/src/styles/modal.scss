@@ -3,125 +3,132 @@
 
 .modal_wapper {
 	z-index: 10;
-
 	position: fixed;
+
 	inset: 0;
 	background: color.change($color_black, $alpha: 0.2);
 	backdrop-filter: blur(6px);
 	-webkit-backdrop-filter: blur(6px);
 	display: grid;
 	place-items: center;
+}
 
-	.modal_container {
-		z-index: 20;
-		position: relative;
+.modal_container {
+	z-index: 20;
 
-		background: $color_white;
-		border-radius: 12px;
-		padding: 20px;
-		width: min(560px, 92vw);
-		max-height: 90vh;
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+	width: min(560px, 92vw);
+	max-height: 90vh;
+	padding: 20px;
 
-		.modal_header {
-			z-index: 30;
-			margin-bottom: 12px;
+	position: relative;
+
+	background: $color_white;
+	border-radius: 1.2vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+
+	.modal_header {
+		z-index: 30;
+		margin-bottom: 12px;
+	}
+
+	.modal_body {
+		display: grid;
+		flex: 1;
+		min-height: 0;
+		gap: 12px;
+		margin-bottom: 12px;
+		overflow-x: hidden;
+		overflow-y: auto;
+
+		.modal_file_input {
+			padding: 12px;
+			border: 2px dashed color.change($color_black, $alpha: 0.2);
+			border-radius: 8px;
+			text-align: center;
+			cursor: pointer;
+			transition: border-color 0.2s ease;
+
+			&:hover {
+				border-color: $color_green;
+			}
 		}
 
-		.modal_body {
+		.modal_list_item {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+		}
+		.modal_grid_item {
 			display: grid;
-			flex: 1;
-			min-height: 0;
+			grid-template-columns: 1fr 1fr;
 			gap: 12px;
-			margin-bottom: 12px;
-			overflow-x: hidden;
-			overflow-y: auto;
+			align-items: center;
+			justify-content: space-between;
 
-			.modal_file_input {
-				padding: 12px;
-				border: 2px dashed color.change($color_black, $alpha: 0.2);
-				border-radius: 8px;
-				text-align: center;
-				cursor: pointer;
-				transition: border-color 0.2s ease;
+			span {
+				font-size: 14px;
+				font-weight: bold;
+			}
 
-				&:hover {
+			.modal_text_input {
+				width: 100%;
+				padding: 3px;
+				margin-top: 4px;
+				border: none;
+				border-bottom: 2px solid color.change($color_black, $alpha: 0.1);
+				&:focus {
+					outline: none;
 					border-color: $color_green;
 				}
 			}
-
-			.modal_list_item {
-				display: flex;
-				gap: 8px;
-				align-items: center;
-			}
-			.modal_grid_item {
-				display: grid;
-				grid-template-columns: 1fr 1fr;
-				gap: 12px;
-				align-items: center;
-				justify-content: space-between;
-
-				span {
-					font-size: 14px;
-					font-weight: bold;
-				}
-
-				.modal_text_input {
-					width: 100%;
-					padding: 3px;
-					margin-top: 4px;
-					border: none;
-					border-bottom: 2px solid color.change($color_black, $alpha: 0.1);
-					&:focus {
-						outline: none;
-						border-color: $color_green;
-					}
-				}
-			}
-			@media (max-width: $mobile) {
-				.modal_grid_item {
-					grid-template-columns: 1fr;
-				}
-			}
 		}
-		.modal_errors {
-			background: color.adjust($color_red, $lightness: 35%);
-			color: color.adjust($color_red, $lightness: -15%);
+	}
+	.modal_errors {
+		background: color.adjust($color_red, $lightness: 35%);
+		color: color.adjust($color_red, $lightness: -15%);
+		border-radius: 8px;
+		padding: 12px;
+
+		.modal_errors_title {
+			font-size: 16px;
+			margin-bottom: 12px;
+			font-weight: bold;
+		}
+	}
+
+	.modal_footer {
+		display: flex;
+		justify-content: center;
+		gap: 8px;
+		margin-top: 16px;
+
+		button {
+			padding: 8px 16px;
+			border: none;
 			border-radius: 8px;
-			padding: 12px;
+			font-weight: bold;
+			color: $color_white;
+			cursor: pointer;
+			background-color: $color_green;
 
-			.modal_errors_title {
-				font-size: 16px;
-				margin-bottom: 12px;
-				font-weight: bold;
+			&:disabled {
+				background-color: color.adjust($color_gray, $lightness: 20%);
+				cursor: not-allowed;
 			}
 		}
+	}
+}
 
-		.modal_footer {
-			display: flex;
-			justify-content: center;
-			gap: 8px;
-			margin-top: 16px;
-
-			button {
-				padding: 8px 16px;
-				border: none;
-				border-radius: 8px;
-				font-weight: bold;
-				color: $color_white;
-				cursor: pointer;
-				background-color: $color_green;
-
-				&:disabled {
-					background-color: color.adjust($color_gray, $lightness: 20%);
-					cursor: not-allowed;
-				}
+@media (max-width: $mobile) {
+	.modal_container {
+		max-height: 85vh;
+		.modal_body {
+			.modal_grid_item {
+				grid-template-columns: 1fr;
 			}
 		}
-
 	}
 }
