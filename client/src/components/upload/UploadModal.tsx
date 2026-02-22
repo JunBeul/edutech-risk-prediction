@@ -95,12 +95,15 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 		setSubmitError(null);
 		setIsSubmitting(true);
 		try {
+			// 프론트 -> shared/api.ts -> 백엔드 /api/predict 로 multipart 요청 전송
+			// 반환값에는 data(행 목록), report_url(다운로드 경로) 등이 포함됩니다.
 			const result = await predictCsv({
 				file,
 				policyObj: policy,
 				mode: 'full'
 			});
 
+			// 결과를 전역 저장소 대신 라우터 state로 넘겨 대시보드에서 바로 사용합니다.
 			onClose();
 			navigate(onSuccessNavigateTo, { state: { result } });
 		} catch (err) {
@@ -122,6 +125,7 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 			<div className='modal_container' onClick={(e) => e.stopPropagation()}>
 				<OverlayHeader title='파일 업로드' onClose={handleClose} className='modal_header' />
 				<div className='modal_body'>
+					{/* CSV 파일 + 평가 정책(임계값/반영비율 등)을 함께 입력받아 예측 요청에 사용 */}
 					<input className='modal_file_input' type='file' accept='.csv' disabled={isSubmitting} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
 
 					<div className='modal_grid_item'>

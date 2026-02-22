@@ -41,6 +41,7 @@ export default function DashboardPage() {
 	const [selectedRow, setSelectedRow] = useState<Record<string, unknown> | null>(null);
 
 	// 라우터 state로 전달된 예측 결과(대시보드 진입 데이터)
+	// UploadModal -> navigate('/dashboard', { state: { result } })로 넘어온 값입니다.
 	const result = (location.state as DashboardLocationState | null)?.result;
 	// result 참조가 바뀔 때만 데이터 배열을 갱신
 	const sourceData = useMemo(() => result?.data ?? [], [result]);
@@ -75,6 +76,7 @@ export default function DashboardPage() {
 	};
 
 	// 직접 URL 진입 등으로 데이터가 없으면 홈으로 보냄
+	// (현재 구조는 서버 재조회 없이 라우터 state를 사용하는 방식)
 	if (!result) {
 		return <Navigate to='/' replace />;
 	}
@@ -82,6 +84,7 @@ export default function DashboardPage() {
 	return (
 		<div>
 			{/* 상단 고정 헤더: 업로드/컬럼선택/다운로드 액션 */}
+			{/* reportUrl은 백엔드 /api/predict 응답의 report_url 값 */}
 			<DashboardHeader onOpenUpload={() => setOpen(true)} onOpenColumns={() => setColModalOpen(true)} reportUrl={result.report_url} />
 
 			<section>
@@ -99,9 +102,11 @@ export default function DashboardPage() {
 				/>
 			</section>
 			{/* 모바일에서 하단 FAB 네비게이션 */}
+			{/* 데스크톱 헤더와 동일하게 report_url 다운로드 액션을 제공 */}
 			<MobileFloatingNav onOpenUpload={() => setOpen(true)} onOpenColumns={() => setColModalOpen(true)} reportUrl={result.report_url} />
 
 			{/* 모달/드로어 계층 */}
+			{/* 대시보드에서도 재업로드 가능: 새 예측 결과로 같은 /dashboard 라우트를 다시 갱신 */}
 			{UploadModalOpen && <UploadModal onClose={() => setOpen(false)} onSuccessNavigateTo='/dashboard' />}
 			{colModalOpen && <ColumnSelectorModal allColumns={allColumns} visibleColumns={visibleColumns} onChange={handleColumnsChange} onClose={() => setColModalOpen(false)} />}
 			{selectedRow && <DetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />}

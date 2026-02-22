@@ -20,6 +20,8 @@ export default function DashboardHeader({ onOpenUpload, onOpenColumns, reportUrl
 
 	const handleDownload = () => {
 		const link = document.createElement('a');
+		// reportUrl은 보통 '/api/download/...' 형태의 상대경로라서
+		// shared/api.ts의 buildApiUrl()로 백엔드 base URL을 붙여 다운로드합니다.
 		link.href = buildApiUrl(reportUrl);
 		link.setAttribute('download', '');
 		document.body.appendChild(link);

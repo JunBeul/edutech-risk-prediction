@@ -75,6 +75,7 @@ def health():
 
 @app.get("/api/sample/dummy-midterm-like-labeled")
 def download_dummy_csv():
+    # 프론트 LandingPage의 "더미 파일 다운로드" 버튼이 호출하는 엔드포인트입니다.
     # 업로드 스키마에 맞는 예시 CSV 파일을 제공합니다.
     if not DUMMY_DATA_PATH.exists():
         raise HTTPException(status_code=404, detail="Dummy CSV file not found.")
@@ -91,6 +92,7 @@ async def predict(
     mode: str = "full",
 ):
     # 예측 처리 메인 흐름:
+    # - 프론트 UploadModal(shared/api.ts -> predictCsv)에서 multipart/form-data로 호출
     # 1) CSV 검증 및 로드
     # 2) 입력 전처리
     # 3) 학습된 모델 로드 후 확률 예측
@@ -139,6 +141,8 @@ async def predict(
         output_path = REPORT_DIR / report_filename
         df_result.to_csv(output_path, index=False, encoding="utf-8-sig")
 
+        # 프론트 대시보드(DashboardHeader/MobileFloatingNav)에서 이 경로를 받아
+        # buildApiUrl()로 절대/상대 URL을 완성한 뒤 다운로드 버튼에 사용합니다.
         report_url = f"/api/download/{report_filename}"
         df_result = safe_json_df(df_result)
 
@@ -146,6 +150,7 @@ async def predict(
             "rows": len(df_result),
             "report_filename": report_filename,
             "report_url": report_url,
+            # 프론트 DashboardPage는 이 data 배열을 라우터 state로 전달받아 표를 렌더링합니다.
             "data": safe_json_df(df_response).to_dict(orient="records"),
         }
     except HTTPException:

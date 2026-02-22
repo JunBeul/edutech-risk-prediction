@@ -10,6 +10,7 @@ type Props = {
 export default function MobileFloatingNav({ onOpenUpload, onOpenColumns, reportUrl }: Props) {
   const handleDownload = () => {
     const link = document.createElement('a')
+    // 모바일도 데스크톱 헤더와 동일하게 report_url -> 실제 다운로드 URL로 변환
     link.href = buildApiUrl(reportUrl)
     link.setAttribute('download', '')
     document.body.appendChild(link)

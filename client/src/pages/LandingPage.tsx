@@ -9,9 +9,12 @@ export default function LandingPage() {
 
 	const onDownloadDummy = async () => {
 		try {
+			// shared/api.ts에서 만든 더미 CSV URL로 요청합니다.
+			// (환경변수 override가 없으면 백엔드 /api/sample/... 엔드포인트를 사용)
 			const response = await fetch(DUMMY_CSV_URL);
 			if (!response.ok) throw new Error('dummy file download failed');
 
+			// 브라우저에서 다운로드가 잘 되도록 Blob -> object URL -> <a download> 방식 사용
 			const blob = await response.blob();
 			const objectUrl = URL.createObjectURL(blob);
 			const link = document.createElement('a');
@@ -22,6 +25,7 @@ export default function LandingPage() {
 			link.remove();
 			URL.revokeObjectURL(objectUrl);
 		} catch {
+			// 일부 환경(브라우저 정책/네트워크 이슈)에서는 새 탭 열기로 fallback
 			window.open(DUMMY_CSV_URL, '_blank', 'noopener,noreferrer');
 		}
 	};
@@ -79,6 +83,7 @@ export default function LandingPage() {
 			</section>
 
 			{open && <UploadModal onClose={() => setOpen(false)} onSuccessNavigateTo='/dashboard' />}
+			{/* UploadModal 내부에서 predictCsv() 호출 성공 시 /dashboard로 이동합니다. */}
 		</div>
 	);
 }
