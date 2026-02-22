@@ -7,7 +7,7 @@
 	position: absolute;
 	background-color: $color_white;
 	border: 1px solid color.scale($color_white, $lightness: -20%);
-	border-radius: 6px;
+	border-radius: 1vh;
 	padding: 12px;
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 	z-index: 5;
@@ -141,7 +141,7 @@
 				left: 50%;
 				top: 50%;
 				transform: translate(-50%, -50%);
-				color: #fff;
+				color: $color_white;
 				font-size: 13px;
 				font-weight: bold;
 				opacity: 0;

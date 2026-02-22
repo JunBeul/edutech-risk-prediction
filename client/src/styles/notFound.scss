@@ -1,0 +1,111 @@
+@use './breakpoints' as *;
+@use 'sass:color';
+
+.not_found_page {
+	min-height: 100vh;
+	display: grid;
+	place-items: center;
+	padding: 24px;
+	background:
+		radial-gradient(circle at 20% 15%, color.change($color_green, $alpha: 0.1), transparent 55%), radial-gradient(circle at 85% 80%, color.change($color_blue, $alpha: 0.08), transparent 50%),
+		color.adjust($color_white, $lightness: -1%);
+}
+
+.not_found_card {
+	width: min(520px, 100%);
+	background: $color_white;
+	border-radius: 1.2vh;
+	padding: 24px;
+	text-align: center;
+	box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+	border: 1px solid color.change($color_black, $alpha: 0.06);
+}
+
+.not_found_icon {
+	width: 42px;
+	height: 42px;
+	color: color.adjust($color_red, $lightness: -5%);
+	margin-bottom: 8px;
+}
+
+.not_found_code {
+	font-size: 14px;
+	opacity: 0.7;
+}
+
+.not_found_title {
+	margin: 8px 0 12px;
+	font-size: 28px;
+	color: $color_black;
+}
+
+.not_found_desc {
+	line-height: 1.5;
+	opacity: 0.8;
+	color: color.change($color_black, $alpha: 0.8);
+}
+
+.not_found_actions {
+	display: flex;
+	gap: 8px;
+	justify-content: center;
+	margin-top: 20px;
+	flex-wrap: wrap;
+}
+
+.not_found_btn {
+	border: none;
+	border-radius: 8px;
+	padding: 10px 14px;
+	cursor: pointer;
+	font-weight: 700;
+	border: 1px solid transparent;
+
+	&.is-primary {
+		background: $color_green;
+		color: $color_white;
+
+		&:hover {
+			background: color.adjust($color_green, $lightness: -5%);
+		}
+	}
+
+	&.is-secondary {
+		background: $color_white;
+		color: $color_black;
+		border-color: $color_gray;
+
+		&:hover {
+			background: color.adjust($color_white, $lightness: -5%);
+			border-color: color.adjust($color_gray, $lightness: -5%);
+		}
+	}
+
+	&:focus {
+		outline: 2px solid color.change($color_black, $alpha: 0.25);
+		outline-offset: 2px;
+	}
+}
+
+@media (max-width: $mobile) {
+	.not_found_page {
+		padding: 16px;
+	}
+
+	.not_found_card {
+		padding: 20px;
+		border-radius: 1.2vh;
+	}
+
+	.not_found_title {
+		font-size: 22px;
+	}
+
+	.not_found_actions {
+		flex-direction: column;
+	}
+
+	.not_found_btn {
+		width: 100%;
+	}
+}
