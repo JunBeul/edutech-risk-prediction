@@ -1,4 +1,4 @@
-import { type SubmitEvent, useId, useMemo, useRef, useState } from 'react';
+import { type ChangeEvent, type SubmitEvent, useId, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { predictCsv } from '../../shared/api';
 import type { EvaluationPolicy } from '../../shared/types';
@@ -115,6 +115,17 @@ function validateUploadForm(form: UploadFormState, policy: EvaluationPolicy | nu
 	return { errors, fieldErrors };
 }
 
+function validateUploadFile(file: File | null): string | null {
+	if (!file) return null;
+	if (!file.name.toLowerCase().endsWith('.csv')) {
+		return 'CSV 파일만 업로드해 주세요.';
+	}
+	if (file.size <= 0) {
+		return '비어 있는 파일은 업로드할 수 없습니다.';
+	}
+	return null;
+}
+
 export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 	const navigate = useNavigate();
 	const titleId = useId();
@@ -163,6 +174,12 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 	const onSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
 		event.preventDefault();
 
+		const fileValidationError = validateUploadFile(file);
+		if (fileValidationError) {
+			setSubmitError(fileValidationError);
+			return;
+		}
+
 		if (!canSubmit || !policy || !file) return;
 
 		setSubmitError(null);
@@ -190,6 +207,20 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 		setForm((prev) => ({ ...prev, [key]: value }));
 	};
 
+	const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+		const nextFile = event.target.files?.[0] ?? null;
+		const fileValidationError = validateUploadFile(nextFile);
+
+		if (fileValidationError) {
+			setFile(null);
+			setSubmitError(fileValidationError);
+			return;
+		}
+
+		setFile(nextFile);
+		setSubmitError(null);
+	};
+
 	const getFieldInputClassName = (key: UploadFormKey) => `modal_text_input${fieldErrors[key] ? ' is-error' : ''}`;
 	const getFieldAriaInvalid = (key: UploadFormKey) => (fieldErrors[key] ? true : undefined);
 
@@ -209,7 +240,7 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 
 				<form onSubmit={onSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
 					<div className='modal_body'>
-						<input ref={fileInputRef} className='modal_file_input' type='file' accept='.csv' disabled={isSubmitting} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+						<input ref={fileInputRef} className='modal_file_input' type='file' accept='.csv' disabled={isSubmitting} onChange={handleFileChange} />
 
 						<div className='modal_grid_item'>
 							<label>
@@ -311,7 +342,7 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 					</div>
 
 					{errors.length > 0 && (
-						<div className='modal_errors'>
+						<div className='modal_errors' role='alert'>
 							<div className='modal_errors_title'>입력 오류</div>
 							<ul style={{ margin: 8 }}>
 								{errors.map((e, i) => (
@@ -322,7 +353,7 @@ export default function UploadModal({ onClose, onSuccessNavigateTo }: Props) {
 					)}
 
 					{submitError && (
-						<div className='modal_errors'>
+						<div className='modal_errors' role='alert'>
 							<div className='modal_errors_title'>업로드 오류</div>
 							<div style={{ margin: 8, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{submitError}</div>
 						</div>
