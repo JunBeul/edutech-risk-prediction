@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { useFixedTableHeader } from '../hooks/useFixedTableHeader';
+import { useScreenState } from '../hooks/useScreenState';
 import { useTableFilterPopover } from '../hooks/useTableFilterPopover';
 import UploadModal from '../components/upload/UploadModal';
 import ColumnSelectorModal from '../components/dashboard/ColumnSelectorModal';
@@ -28,6 +29,7 @@ const PRIORITY_COLUMNS = ['student_id', 'risk_proba', 'risk_level', 'top_reasons
 
 export default function DashboardPage() {
 	const location = useLocation();
+	const { isMobile } = useScreenState();
 
 	// 모달/드로어 열림 상태
 	const [UploadModalOpen, setOpen] = useState(false);
@@ -64,7 +66,7 @@ export default function DashboardPage() {
 	const visibleColumns = columnState.reportKey === reportKey ? columnState.cols : defaultCols;
 	// 고정 헤더 훅 의존성 비교를 단순화하기 위해 문자열 키로 변환
 	const visibleColumnsKey = useMemo(() => visibleColumns.join('|'), [visibleColumns]);
-	const isScrollLockOpen = UploadModalOpen || colModalOpen || !!selectedRow;
+	const isScrollLockOpen = UploadModalOpen || colModalOpen || (isMobile && !!selectedRow);
 	// 스크롤 시 헤더를 fixed 오버레이로 동기화하는 훅
 	const { fixedHeader, tableScrollRef, tableRef, overlayTableRef } = useFixedTableHeader(visibleColumnsKey, filteredRows.length);
 

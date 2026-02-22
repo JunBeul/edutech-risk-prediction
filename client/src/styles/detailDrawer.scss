@@ -11,7 +11,7 @@
 	border-radius: 1.2vh 0 0 1.2vh;
 	top: 2.5%;
 	right: 0%;
-	width: min(560px, 92vw);
+	width: max(400px, 40vw);
 	height: 95%;
 	box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
 	overflow: hidden;
@@ -36,7 +36,7 @@
 				font-weight: bolder;
 				text-align: right;
 				color: $color_black;
-				min-width: 130px;
+				width: 130px;
 				flex-shrink: 0;
 			}
 			.value {
@@ -75,5 +75,8 @@
 		right: auto;
 		transform: translate(-50%, -50%);
 		border-radius: 1.2vh;
+	}
+	.drawer_container .drawer_body .drawer_row .key {
+		width: 100px;
 	}
 }
